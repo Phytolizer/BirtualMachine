@@ -168,6 +168,7 @@ constexpr std::array PROGRAM = {
     Instruction::push(69),
     Instruction::push(420),
     Instruction::add(),
+    Instruction::push(42),
     Instruction::subtract(),
 };
 
