@@ -78,60 +78,63 @@ constexpr const char* instructionTypeAsCstr(const InstructionType type)
 	}
 }
 
-struct Instruction
+class Instruction
 {
-	InstructionType type;
-	Word operand;
+	InstructionType _type;
+	Word _operand;
 
-	static constexpr Instruction Push(Word operand)
+  public:
+	constexpr Instruction(const InstructionType type, const Word operand) : _type(type), _operand(operand)
 	{
-		return Instruction{
-		    .type = InstructionType::Push,
-		    .operand = operand,
-		};
+	}
+
+	explicit constexpr Instruction(const InstructionType type) : _type(type), _operand(0)
+	{
+	}
+
+	static constexpr Instruction Push(const Word operand)
+	{
+		return Instruction{InstructionType::Push, operand};
 	}
 
 	static constexpr Instruction Add()
 	{
-		return Instruction{
-		    .type = InstructionType::Add,
-		};
+		return Instruction{InstructionType::Add};
 	}
 
 	static constexpr Instruction Subtract()
 	{
-		return Instruction{
-		    .type = InstructionType::Subtract,
-		};
+		return Instruction{InstructionType::Subtract};
 	}
 
 	static constexpr Instruction Multiply()
 	{
-		return Instruction{
-		    .type = InstructionType::Multiply,
-		};
+		return Instruction{InstructionType::Multiply};
 	}
 
 	static constexpr Instruction Divide()
 	{
-		return Instruction{
-		    .type = InstructionType::Divide,
-		};
+		return Instruction{InstructionType::Divide};
 	}
 
-	static constexpr Instruction Jump(Word address)
+	static constexpr Instruction Jump(const Word address)
 	{
-		return Instruction{
-		    .type = InstructionType::Jump,
-		    .operand = address,
-		};
+		return Instruction{InstructionType::Jump, address};
 	}
 
 	static constexpr Instruction Halt()
 	{
-		return Instruction{
-		    .type = InstructionType::Halt,
-		};
+		return Instruction{InstructionType::Halt};
+	}
+
+	[[nodiscard]] constexpr InstructionType Type() const
+	{
+		return _type;
+	}
+
+	[[nodiscard]] constexpr Word Operand() const
+	{
+		return _operand;
 	}
 };
 
@@ -145,14 +148,14 @@ class Bm
   public:
 	Err ExecuteInstruction(const Instruction inst)
 	{
-		switch (inst.type)
+		switch (inst.Type())
 		{
 			case InstructionType::Push:
 				if (_stackSize >= STACK_CAPACITY)
 				{
 					return Err::StackOverflow;
 				}
-				_stack[_stackSize++] = inst.operand;
+				_stack[_stackSize++] = inst.Operand();
 				_instructionPointer += 1;
 				break;
 			case InstructionType::Add:
@@ -249,7 +252,7 @@ constexpr std::array PROGRAM = {
     Instruction::Multiply(),
     Instruction::Push(4),
     Instruction::Divide(),
-	Instruction::Halt(),
+    Instruction::Halt(),
 };
 
 int main(const int argc, char** argv)
@@ -260,7 +263,7 @@ int main(const int argc, char** argv)
 	while (!bm.Halt())
 	{
 		const Instruction& inst = PROGRAM[bm.InstructionPointer()];
-		std::cout << instructionTypeAsCstr(inst.type) << "\n";
+		std::cout << instructionTypeAsCstr(inst.Type()) << "\n";
 		if (const Err trap = bm.ExecuteInstruction(inst); trap != Err::Ok)
 		{
 			std::cerr << "Err activated: " << errAsCstr(trap) << "\n";
