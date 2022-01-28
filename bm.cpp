@@ -205,7 +205,7 @@ constexpr std::array PROGRAM = {
     Instruction::subtract(),
     Instruction::push(2),
     Instruction::multiply(),
-    Instruction::push(0),
+    Instruction::push(4),
     Instruction::divide(),
 };
 
