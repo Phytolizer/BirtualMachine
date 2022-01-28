@@ -46,7 +46,9 @@ constexpr std::size_t STACK_CAPACITY = 1024;
 	X(Add)                                                                                                             \
 	X(Subtract)                                                                                                        \
 	X(Multiply)                                                                                                        \
-	X(Divide)
+	X(Divide)                                                                                                          \
+	X(Jump)                                                                                                            \
+	X(Halt)
 
 enum struct InstructionType
 {
@@ -116,61 +118,91 @@ struct Instruction
 		    .type = InstructionType::Divide,
 		};
 	}
+
+	static constexpr Instruction Jump(Word address)
+	{
+		return Instruction{
+		    .type = InstructionType::Jump,
+		    .operand = address,
+		};
+	}
+
+	static constexpr Instruction Halt()
+	{
+		return Instruction{
+		    .type = InstructionType::Halt,
+		};
+	}
 };
 
-struct Bm
+class Bm
 {
-	std::array<Word, STACK_CAPACITY> stack;
-	std::size_t stackSize;
+	std::array<Word, STACK_CAPACITY> _stack{};
+	std::size_t _stackSize = 0;
+	Word _instructionPointer = 0;
+	bool _halt = false;
 
+  public:
 	Err ExecuteInstruction(const Instruction inst)
 	{
 		switch (inst.type)
 		{
 			case InstructionType::Push:
-				if (stackSize >= STACK_CAPACITY)
+				if (_stackSize >= STACK_CAPACITY)
 				{
 					return Err::StackOverflow;
 				}
-				stack[stackSize++] = inst.operand;
+				_stack[_stackSize++] = inst.operand;
+				_instructionPointer += 1;
 				break;
 			case InstructionType::Add:
-				if (stackSize < 2)
+				if (_stackSize < 2)
 				{
 					return Err::StackUnderflow;
 				}
-				stack[stackSize - 2] += stack[stackSize - 1];
-				stackSize -= 1;
+				_stack[_stackSize - 2] += _stack[_stackSize - 1];
+				_stackSize -= 1;
+				_instructionPointer += 1;
 				break;
 			case InstructionType::Subtract:
-				if (stackSize < 2)
+				if (_stackSize < 2)
 				{
 					return Err::StackUnderflow;
 				}
-				stack[stackSize - 2] -= stack[stackSize - 1];
-				stackSize -= 1;
+				_stack[_stackSize - 2] -= _stack[_stackSize - 1];
+				_stackSize -= 1;
+				_instructionPointer += 1;
 				break;
 			case InstructionType::Multiply:
-				if (stackSize < 2)
+				if (_stackSize < 2)
 				{
 					return Err::StackUnderflow;
 				}
-				stack[stackSize - 2] *= stack[stackSize - 1];
-				stackSize -= 1;
+				_stack[_stackSize - 2] *= _stack[_stackSize - 1];
+				_stackSize -= 1;
+				_instructionPointer += 1;
 				break;
 			case InstructionType::Divide:
-				if (stackSize < 2)
+				if (_stackSize < 2)
 				{
 					return Err::StackUnderflow;
 				}
 
-				if (stack[stackSize - 1] == 0)
+				if (_stack[_stackSize - 1] == 0)
 				{
 					return Err::DivideByZero;
 				}
 
-				stack[stackSize - 2] /= stack[stackSize - 1];
-				stackSize -= 1;
+				_stack[_stackSize - 2] /= _stack[_stackSize - 1];
+				_stackSize -= 1;
+				_instructionPointer += 1;
+				break;
+			case InstructionType::Jump:
+				_instructionPointer = _stack[_stackSize - 1];
+				_stackSize -= 1;
+				break;
+			case InstructionType::Halt:
+				_halt = true;
 				break;
 			default:
 				return Err::IllegalInstruction;
@@ -182,17 +214,27 @@ struct Bm
 	void Dump(std::ostream& os) const
 	{
 		os << "Stack:\n";
-		if (stackSize > 0)
+		if (_stackSize > 0)
 		{
-			for (std::size_t i = 0; i < stackSize; ++i)
+			for (std::size_t i = 0; i < _stackSize; ++i)
 			{
-				os << "  " << stack[i] << "\n";
+				os << "  " << _stack[i] << "\n";
 			}
 		}
 		else
 		{
 			os << "  [empty]\n";
 		}
+	}
+
+	[[nodiscard]] bool Halt() const
+	{
+		return _halt;
+	}
+
+	[[nodiscard]] Word InstructionPointer() const
+	{
+		return _instructionPointer;
 	}
 };
 
@@ -207,6 +249,7 @@ constexpr std::array PROGRAM = {
     Instruction::Multiply(),
     Instruction::Push(4),
     Instruction::Divide(),
+	Instruction::Halt(),
 };
 
 int main(const int argc, char** argv)
@@ -214,8 +257,10 @@ int main(const int argc, char** argv)
 	std::span args{argv, static_cast<std::size_t>(argc)};
 
 	bm.Dump(std::cout);
-	for (const Instruction& inst : PROGRAM)
+	while (!bm.Halt())
 	{
+		const Instruction& inst = PROGRAM[bm.InstructionPointer()];
+		std::cout << instructionTypeAsCstr(inst.type) << "\n";
 		if (const Err trap = bm.ExecuteInstruction(inst); trap != Err::Ok)
 		{
 			std::cerr << "Err activated: " << errAsCstr(trap) << "\n";
