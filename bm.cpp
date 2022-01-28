@@ -81,7 +81,7 @@ struct Instruction
 	InstructionType type;
 	Word operand;
 
-	static constexpr Instruction push(Word operand)
+	static constexpr Instruction Push(Word operand)
 	{
 		return Instruction{
 		    .type = InstructionType::Push,
@@ -89,28 +89,28 @@ struct Instruction
 		};
 	}
 
-	static constexpr Instruction add()
+	static constexpr Instruction Add()
 	{
 		return Instruction{
 		    .type = InstructionType::Add,
 		};
 	}
 
-	static constexpr Instruction subtract()
+	static constexpr Instruction Subtract()
 	{
 		return Instruction{
 		    .type = InstructionType::Subtract,
 		};
 	}
 
-	static constexpr Instruction multiply()
+	static constexpr Instruction Multiply()
 	{
 		return Instruction{
 		    .type = InstructionType::Multiply,
 		};
 	}
 
-	static constexpr Instruction divide()
+	static constexpr Instruction Divide()
 	{
 		return Instruction{
 		    .type = InstructionType::Divide,
@@ -123,7 +123,7 @@ struct Bm
 	std::array<Word, STACK_CAPACITY> stack;
 	std::size_t stackSize;
 
-	Err executeInstruction(const Instruction inst)
+	Err ExecuteInstruction(const Instruction inst)
 	{
 		switch (inst.type)
 		{
@@ -179,7 +179,7 @@ struct Bm
 		return Err::Ok;
 	}
 
-	void dump(std::ostream& os) const
+	void Dump(std::ostream& os) const
 	{
 		os << "Stack:\n";
 		if (stackSize > 0)
@@ -198,30 +198,30 @@ struct Bm
 
 Bm bm{};
 constexpr std::array PROGRAM = {
-    Instruction::push(69),
-    Instruction::push(420),
-    Instruction::add(),
-    Instruction::push(42),
-    Instruction::subtract(),
-    Instruction::push(2),
-    Instruction::multiply(),
-    Instruction::push(4),
-    Instruction::divide(),
+    Instruction::Push(69),
+    Instruction::Push(420),
+    Instruction::Add(),
+    Instruction::Push(42),
+    Instruction::Subtract(),
+    Instruction::Push(2),
+    Instruction::Multiply(),
+    Instruction::Push(4),
+    Instruction::Divide(),
 };
 
 int main(const int argc, char** argv)
 {
 	std::span args{argv, static_cast<std::size_t>(argc)};
 
-	bm.dump(std::cout);
+	bm.Dump(std::cout);
 	for (const Instruction& inst : PROGRAM)
 	{
-		if (const Err trap = bm.executeInstruction(inst); trap != Err::Ok)
+		if (const Err trap = bm.ExecuteInstruction(inst); trap != Err::Ok)
 		{
 			std::cerr << "Err activated: " << errAsCstr(trap) << "\n";
-			bm.dump(std::cerr);
+			bm.Dump(std::cerr);
 			return 1;
 		}
 	}
-	bm.dump(std::cout);
+	bm.Dump(std::cout);
 }
