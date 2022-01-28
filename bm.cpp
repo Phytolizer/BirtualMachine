@@ -40,14 +40,40 @@ using Word = std::int64_t;
 
 constexpr std::size_t STACK_CAPACITY = 1024;
 
+#define INSTRUCTION_TYPES_X                                                                                            \
+	X(Push)                                                                                                            \
+	X(Add)                                                                                                             \
+	X(Subtract)                                                                                                        \
+	X(Multiply)                                                                                                        \
+	X(Divide)
+
 enum struct InstructionType
 {
-	Push,
-	Add,
-	Subtract,
-	Multiply,
-	Divide,
+#define X(x) x,
+	INSTRUCTION_TYPES_X
+#undef X
 };
+
+struct IllegalInstructionTypeException final : std::runtime_error
+{
+	IllegalInstructionTypeException() : runtime_error("Encountered an illegal InstructionType value.")
+	{
+	}
+};
+
+constexpr const char* instructionTypeAsCstr(const InstructionType type)
+{
+	switch (type)
+	{
+#define X(x)                                                                                                           \
+	case InstructionType::x:                                                                                           \
+		return "InstructionType::" #x;
+		INSTRUCTION_TYPES_X
+#undef X
+		default:
+			throw IllegalInstructionTypeException{};
+	}
+}
 
 struct Instruction
 {
