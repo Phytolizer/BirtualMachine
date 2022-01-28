@@ -1,0 +1,24 @@
+---
+BasedOnStyle: Microsoft
+PointerAlignment: Left
+IncludeBlocks: Regroup
+BraceWrapping:
+    AfterCaseLabel: false
+    AfterClass: false
+    AfterControlStatement: Never
+    AfterEnum: false
+    AfterFunction: false
+    AfterNamespace: false
+    AfterStruct: false
+    AfterUnion: false
+    AfterExternBlock: false
+    BeforeCatch: false
+    BeforeElse: false
+    BeforeLambdaBody: false
+    BeforeWhile: false
+BinPackParameters: false
+BinPackArguments: false
+AlignOperands: DontAlign
+AlignAfterOpenBracket: AlwaysBreak
+TabWidth: 4
+UseTab: ForIndentation
