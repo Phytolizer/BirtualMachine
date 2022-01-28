@@ -7,6 +7,7 @@ using Word = std::int64_t;
 
 constexpr std::size_t STACK_CAPACITY = 1024;
 constexpr std::size_t PROGRAM_CAPACITY = 1024;
+constexpr std::size_t EXECUTION_LIMIT = 1024;
 
 #define ERRS_X                                                                                                         \
 	X(Ok)                                                                                                              \
@@ -279,7 +280,7 @@ int main()
 {
 	bm.LoadProgramFromMemory(PROGRAM);
 	bm.DumpStack(std::cout);
-	while (!bm.Halt())
+	for (std::size_t i = 0; i < EXECUTION_LIMIT && !bm.Halt(); ++i)
 	{
 		const Err err = bm.ExecuteInstruction();
 		bm.DumpStack(std::cout);
