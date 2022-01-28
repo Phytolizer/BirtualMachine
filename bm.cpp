@@ -196,6 +196,10 @@ constexpr std::array PROGRAM = {
     Instruction::add(),
     Instruction::push(42),
     Instruction::subtract(),
+	Instruction::push(2),
+	Instruction::multiply(),
+	Instruction::push(0),
+	Instruction::divide(),
 };
 
 int main(const int argc, char** argv)
