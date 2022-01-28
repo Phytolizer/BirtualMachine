@@ -1,7 +1,6 @@
 #include <array>
 #include <iostream>
 #include <span>
-#include <vector>
 
 using Word = std::int64_t;
 
