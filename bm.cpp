@@ -6,7 +6,8 @@
 	X(Ok)                                                                                                              \
 	X(StackOverflow)                                                                                                   \
 	X(StackUnderflow)                                                                                                  \
-	X(IllegalInstruction)
+	X(IllegalInstruction)                                                                                              \
+	X(DivideByZero)
 
 struct IllegalErrException final : std::runtime_error
 {
@@ -162,6 +163,12 @@ struct Bm
 				{
 					return Err::StackUnderflow;
 				}
+
+				if (stack[stackSize - 1] == 0)
+				{
+					return Err::DivideByZero;
+				}
+
 				stack[stackSize - 2] /= stack[stackSize - 1];
 				stackSize -= 1;
 				break;
