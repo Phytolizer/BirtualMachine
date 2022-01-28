@@ -2,37 +2,37 @@
 #include <iostream>
 #include <span>
 
-#define TRAPS_X                                                                                                        \
+#define ERRS_X                                                                                                         \
 	X(Ok)                                                                                                              \
 	X(StackOverflow)                                                                                                   \
 	X(StackUnderflow)                                                                                                  \
 	X(IllegalInstruction)
 
-struct IllegalTrapException final : std::runtime_error
+struct IllegalErrException final : std::runtime_error
 {
-	IllegalTrapException() : runtime_error("Encountered an illegal Trap value.")
+	IllegalErrException() : runtime_error("Encountered an illegal Err value.")
 	{
 	}
 };
 
-enum struct Trap
+enum struct Err
 {
 #define X(x) x,
-	TRAPS_X
+	ERRS_X
 #undef X
 };
 
-static constexpr const char* trapAsCstr(const Trap trap)
+static constexpr const char* errAsCstr(const Err err)
 {
-	switch (trap)
+	switch (err)
 	{
 #define X(x)                                                                                                           \
-	case Trap::x:                                                                                                      \
-		return "Trap::" #x;
-		TRAPS_X
+	case Err::x:                                                                                                       \
+		return "Err::" #x;
+		ERRS_X
 #undef X
 		default:
-			throw IllegalTrapException{};
+			throw IllegalErrException{};
 	}
 }
 
@@ -122,21 +122,21 @@ struct Bm
 	std::array<Word, STACK_CAPACITY> stack;
 	std::size_t stackSize;
 
-	Trap executeInstruction(const Instruction inst)
+	Err executeInstruction(const Instruction inst)
 	{
 		switch (inst.type)
 		{
 			case InstructionType::Push:
 				if (stackSize >= STACK_CAPACITY)
 				{
-					return Trap::StackOverflow;
+					return Err::StackOverflow;
 				}
 				stack[stackSize++] = inst.operand;
 				break;
 			case InstructionType::Add:
 				if (stackSize < 2)
 				{
-					return Trap::StackUnderflow;
+					return Err::StackUnderflow;
 				}
 				stack[stackSize - 2] += stack[stackSize - 1];
 				stackSize -= 1;
@@ -144,7 +144,7 @@ struct Bm
 			case InstructionType::Subtract:
 				if (stackSize < 2)
 				{
-					return Trap::StackUnderflow;
+					return Err::StackUnderflow;
 				}
 				stack[stackSize - 2] -= stack[stackSize - 1];
 				stackSize -= 1;
@@ -152,7 +152,7 @@ struct Bm
 			case InstructionType::Multiply:
 				if (stackSize < 2)
 				{
-					return Trap::StackUnderflow;
+					return Err::StackUnderflow;
 				}
 				stack[stackSize - 2] *= stack[stackSize - 1];
 				stackSize -= 1;
@@ -160,16 +160,16 @@ struct Bm
 			case InstructionType::Divide:
 				if (stackSize < 2)
 				{
-					return Trap::StackUnderflow;
+					return Err::StackUnderflow;
 				}
 				stack[stackSize - 2] /= stack[stackSize - 1];
 				stackSize -= 1;
 				break;
 			default:
-				return Trap::IllegalInstruction;
+				return Err::IllegalInstruction;
 		}
 
-		return Trap::Ok;
+		return Err::Ok;
 	}
 
 	void dump(std::ostream& os) const
@@ -196,10 +196,10 @@ constexpr std::array PROGRAM = {
     Instruction::add(),
     Instruction::push(42),
     Instruction::subtract(),
-	Instruction::push(2),
-	Instruction::multiply(),
-	Instruction::push(0),
-	Instruction::divide(),
+    Instruction::push(2),
+    Instruction::multiply(),
+    Instruction::push(0),
+    Instruction::divide(),
 };
 
 int main(const int argc, char** argv)
@@ -209,9 +209,9 @@ int main(const int argc, char** argv)
 	bm.dump(std::cout);
 	for (const Instruction& inst : PROGRAM)
 	{
-		if (const Trap trap = bm.executeInstruction(inst); trap != Trap::Ok)
+		if (const Err trap = bm.executeInstruction(inst); trap != Err::Ok)
 		{
-			std::cerr << "Trap activated: " << trapAsCstr(trap) << "\n";
+			std::cerr << "Err activated: " << errAsCstr(trap) << "\n";
 			bm.dump(std::cerr);
 			return 1;
 		}
