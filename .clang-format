@@ -3,22 +3,23 @@ BasedOnStyle: Microsoft
 PointerAlignment: Left
 IncludeBlocks: Regroup
 BraceWrapping:
-    AfterCaseLabel: false
-    AfterClass: false
-    AfterControlStatement: Never
-    AfterEnum: false
-    AfterFunction: false
-    AfterNamespace: false
-    AfterStruct: false
-    AfterUnion: false
-    AfterExternBlock: false
-    BeforeCatch: false
-    BeforeElse: false
-    BeforeLambdaBody: false
-    BeforeWhile: false
+    AfterCaseLabel: true
+    AfterClass: true
+    AfterControlStatement: Always
+    AfterEnum: true
+    AfterFunction: true
+    AfterNamespace: true
+    AfterStruct: true
+    AfterUnion: true
+    AfterExternBlock: true
+    BeforeCatch: true
+    BeforeElse: true
+    BeforeLambdaBody: true
+    BeforeWhile: true
 BinPackParameters: false
 BinPackArguments: false
 AlignOperands: DontAlign
 AlignAfterOpenBracket: AlwaysBreak
 TabWidth: 4
 UseTab: ForIndentation
+IndentCaseLabels: true
