@@ -28,7 +28,7 @@ static constexpr const char* trapAsCstr(const Trap trap)
 	{
 #define X(x)                                                                                                           \
 	case Trap::x:                                                                                                      \
-		return #x;
+		return "Trap::" #x;
 		TRAPS_X
 #undef X
 		default:
@@ -43,7 +43,10 @@ constexpr std::size_t STACK_CAPACITY = 1024;
 enum struct InstructionType
 {
 	Push,
-	Plus,
+	Add,
+	Subtract,
+	Multiply,
+	Divide,
 };
 
 struct Instruction
@@ -53,16 +56,37 @@ struct Instruction
 
 	static constexpr Instruction push(Word operand)
 	{
-		return {
+		return Instruction{
 		    .type = InstructionType::Push,
 		    .operand = operand,
 		};
 	}
 
-	static constexpr Instruction plus()
+	static constexpr Instruction add()
 	{
-		return {
-		    .type = InstructionType::Plus,
+		return Instruction{
+		    .type = InstructionType::Add,
+		};
+	}
+
+	static constexpr Instruction subtract()
+	{
+		return Instruction{
+		    .type = InstructionType::Subtract,
+		};
+	}
+
+	static constexpr Instruction multiply()
+	{
+		return Instruction{
+		    .type = InstructionType::Multiply,
+		};
+	}
+
+	static constexpr Instruction divide()
+	{
+		return Instruction{
+		    .type = InstructionType::Divide,
 		};
 	}
 };
@@ -83,12 +107,36 @@ struct Bm
 				}
 				stack[stackSize++] = inst.operand;
 				break;
-			case InstructionType::Plus:
+			case InstructionType::Add:
 				if (stackSize < 2)
 				{
 					return Trap::StackUnderflow;
 				}
 				stack[stackSize - 2] += stack[stackSize - 1];
+				stackSize -= 1;
+				break;
+			case InstructionType::Subtract:
+				if (stackSize < 2)
+				{
+					return Trap::StackUnderflow;
+				}
+				stack[stackSize - 2] -= stack[stackSize - 1];
+				stackSize -= 1;
+				break;
+			case InstructionType::Multiply:
+				if (stackSize < 2)
+				{
+					return Trap::StackUnderflow;
+				}
+				stack[stackSize - 2] *= stack[stackSize - 1];
+				stackSize -= 1;
+				break;
+			case InstructionType::Divide:
+				if (stackSize < 2)
+				{
+					return Trap::StackUnderflow;
+				}
+				stack[stackSize - 2] /= stack[stackSize - 1];
 				stackSize -= 1;
 				break;
 			default:
@@ -119,7 +167,8 @@ Bm bm{};
 constexpr std::array PROGRAM = {
     Instruction::push(69),
     Instruction::push(420),
-    Instruction::plus(),
+    Instruction::add(),
+    Instruction::subtract(),
 };
 
 int main(const int argc, char** argv)
