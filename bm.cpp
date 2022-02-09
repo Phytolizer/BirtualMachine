@@ -253,7 +253,7 @@ class Bm
 	void LoadProgramFromMemory(const std::span<const Instruction> program)
 	{
 		_programSize = static_cast<Word>(program.size());
-		std::ranges::copy(program, _program.begin());
+		std::copy(program.begin(), program.end(), _program.begin());
 	}
 
 	[[nodiscard]] bool Halt() const
