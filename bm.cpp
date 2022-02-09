@@ -269,10 +269,10 @@ class Bm
 
 Bm bm{};
 constexpr std::array PROGRAM = {
-	Instruction::Push(0),
-	Instruction::Push(1),
-	Instruction::Add(),
-	Instruction::Jump(1),
+    Instruction::Push(0),
+    Instruction::Push(1),
+    Instruction::Add(),
+    Instruction::Jump(1),
 };
 
 int main()
