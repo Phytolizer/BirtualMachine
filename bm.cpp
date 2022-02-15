@@ -158,7 +158,7 @@ class Bm
 	bool _halt = false;
 
   public:
-	Err ExecuteInstruction()
+	[[nodiscard]] Err ExecuteInstruction()
 	{
 		if (_instructionPointer < 0 || _instructionPointer >= _programSize)
 		{
