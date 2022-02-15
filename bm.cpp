@@ -8,12 +8,12 @@ constexpr std::size_t STACK_CAPACITY = 1024;
 constexpr std::size_t PROGRAM_CAPACITY = 1024;
 constexpr std::size_t EXECUTION_LIMIT = 1024;
 
-#define ERRS_X                                                                                                         \
-	X(Ok)                                                                                                              \
-	X(StackOverflow)                                                                                                   \
-	X(StackUnderflow)                                                                                                  \
-	X(IllegalInstruction)                                                                                              \
-	X(IllegalInstructionAccess)                                                                                        \
+#define ERRS_X                                                                                     \
+	X(Ok)                                                                                          \
+	X(StackOverflow)                                                                               \
+	X(StackUnderflow)                                                                              \
+	X(IllegalInstruction)                                                                          \
+	X(IllegalInstructionAccess)                                                                    \
 	X(DivideByZero)
 
 struct IllegalErrException final : std::runtime_error
@@ -34,8 +34,8 @@ static constexpr const char* errAsCstr(const Err err)
 {
 	switch (err)
 	{
-#define X(x)                                                                                                           \
-	case Err::x:                                                                                                       \
+#define X(x)                                                                                       \
+	case Err::x:                                                                                   \
 		return "Err::" #x;
 		ERRS_X
 #undef X
@@ -44,13 +44,13 @@ static constexpr const char* errAsCstr(const Err err)
 	}
 }
 
-#define INSTRUCTION_TYPES_X                                                                                            \
-	X(Push)                                                                                                            \
-	X(Add)                                                                                                             \
-	X(Subtract)                                                                                                        \
-	X(Multiply)                                                                                                        \
-	X(Divide)                                                                                                          \
-	X(Jump)                                                                                                            \
+#define INSTRUCTION_TYPES_X                                                                        \
+	X(Push)                                                                                        \
+	X(Add)                                                                                         \
+	X(Subtract)                                                                                    \
+	X(Multiply)                                                                                    \
+	X(Divide)                                                                                      \
+	X(Jump)                                                                                        \
 	X(Halt)
 
 enum struct InstructionType
@@ -62,7 +62,8 @@ enum struct InstructionType
 
 struct IllegalInstructionTypeException final : std::runtime_error
 {
-	IllegalInstructionTypeException() : runtime_error("Encountered an illegal InstructionType value.")
+	IllegalInstructionTypeException()
+	    : runtime_error("Encountered an illegal InstructionType value.")
 	{
 	}
 };
@@ -71,8 +72,8 @@ constexpr const char* instructionTypeAsCstr(const InstructionType type)
 {
 	switch (type)
 	{
-#define X(x)                                                                                                           \
-	case InstructionType::x:                                                                                           \
+#define X(x)                                                                                       \
+	case InstructionType::x:                                                                       \
 		return "InstructionType::" #x;
 		INSTRUCTION_TYPES_X
 #undef X
@@ -87,7 +88,8 @@ class Instruction
 	Word _operand;
 
   public:
-	constexpr Instruction(const InstructionType type, const Word operand) : _type(type), _operand(operand)
+	constexpr Instruction(const InstructionType type, const Word operand)
+	    : _type(type), _operand(operand)
 	{
 	}
 
