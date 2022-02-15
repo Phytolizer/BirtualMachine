@@ -1,4 +1,5 @@
 #include <array>
+#include <cstdint>
 #include <iostream>
 #include <span>
 
@@ -51,7 +52,8 @@ static constexpr const char* errAsCstr(const Err err)
 	X(Multiply)                                                                                    \
 	X(Divide)                                                                                      \
 	X(Jump)                                                                                        \
-	X(Halt)
+	X(Halt)                                                                                        \
+	X(Eq)
 
 enum struct InstructionType
 {

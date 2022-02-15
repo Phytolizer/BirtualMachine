@@ -368,3 +368,4 @@ FodyWeavers.xsd
 # Premake5.
 /Makefile
 *.make
+/compile_commands.json
