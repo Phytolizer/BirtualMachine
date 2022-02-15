@@ -139,6 +139,11 @@ class Instruction
 		return Instruction{InstructionType::Halt};
 	}
 
+	static constexpr Instruction Eq()
+	{
+		return Instruction{InstructionType::Eq};
+	}
+
 	[[nodiscard]] constexpr InstructionType Type() const
 	{
 		return _type;
