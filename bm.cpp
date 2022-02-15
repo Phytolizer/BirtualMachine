@@ -95,7 +95,7 @@ class Instruction
 	{
 	}
 
-	// Only for use in std::array.
+	// Only for use in std::array constructor.
 	constexpr Instruction() : _type(InstructionType::Halt), _operand(0)
 	{
 	}
@@ -282,7 +282,6 @@ int main()
 	for (std::size_t i = 0; i < EXECUTION_LIMIT && !bm.Halt(); ++i)
 	{
 		const Err err = bm.ExecuteInstruction();
-		bm.DumpStack(std::cout);
 		if (err != Err::Ok)
 		{
 			std::cerr << "Err activated: " << errAsCstr(err) << "\n";
