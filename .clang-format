@@ -1,24 +1,6 @@
 ---
-BasedOnStyle: Microsoft
+BasedOnStyle: LLVM
 PointerAlignment: Left
-IncludeBlocks: Regroup
-BraceWrapping:
-  AfterCaseLabel: true
-  AfterClass: true
-  AfterControlStatement: Always
-  AfterEnum: true
-  AfterFunction: true
-  AfterNamespace: true
-  AfterStruct: true
-  AfterUnion: true
-  AfterExternBlock: true
-  BeforeCatch: true
-  BeforeElse: true
-  BeforeLambdaBody: true
-  BeforeWhile: true
-ColumnLimit: 100
-AlignOperands: DontAlign
-AlignAfterOpenBracket: AlwaysBreak
-TabWidth: 4
-UseTab: ForIndentation
+IndentWidth: 4
 IndentCaseLabels: true
+ColumnLimit: 100

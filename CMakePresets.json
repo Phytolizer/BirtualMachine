@@ -1,0 +1,90 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "dev-base",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "dev-ninja",
+            "description": "Develop with Ninja",
+            "binaryDir": "build/dev-ninja",
+            "inherits": "dev-base",
+            "generator": "Ninja"
+        },
+        {
+            "name": "dev-make",
+            "description": "Develop with Unix Makefiles",
+            "binaryDir": "build/dev-make",
+            "inherits": "dev-base",
+            "generator": "Unix Makefiles"
+        },
+        {
+            "name": "dist-base",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "dist-ninja",
+            "description": "Release with Ninja",
+            "binaryDir": "build/dist-ninja",
+            "inherits": "dist-base",
+            "generator": "Ninja"
+        },
+        {
+            "name": "dist-make",
+            "description": "Release with Unix Makefiles",
+            "binaryDir": "build/dist-make",
+            "inherits": "dist-base",
+            "generator": "Unix Makefiles"
+        },
+        {
+            "name": "dist-msvc",
+            "description": "Release with MSVC (64-bit)",
+            "binaryDir": "build/dist-msvc",
+            "inherits": "dist-base",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64"
+        },
+        {
+            "name": "dist-msvc32",
+            "description": "Release with MSVC (32-bit)",
+            "binaryDir": "build/dist-msvc32",
+            "inherits": "dist-base",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x86"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "dev-ninja",
+            "configurePreset": "dev-ninja"
+        },
+        {
+            "name": "dev-make",
+            "configurePreset": "dev-make"
+        },
+        {
+            "name": "dist-ninja",
+            "configurePreset": "dist-ninja"
+        },
+        {
+            "name": "dist-make",
+            "configurePreset": "dist-make"
+        },
+        {
+            "name": "dist-msvc",
+            "configurePreset": "dist-msvc"
+        },
+        {
+            "name": "dist-msvc32",
+            "configurePreset": "dist-msvc32"
+        }
+    ]
+}

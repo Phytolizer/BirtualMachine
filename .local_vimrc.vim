@@ -1,1 +1,1 @@
-set makeprg=cmake\ --build\ --preset\ dev
+set makeprg=cmake\ --build\ --preset\ dev-ninja
