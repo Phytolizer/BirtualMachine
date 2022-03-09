@@ -4,3 +4,4 @@ PointerAlignment: Left
 IndentWidth: 4
 IndentCaseLabels: true
 ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: None
