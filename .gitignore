@@ -366,8 +366,8 @@ FodyWeavers.xsd
 /build/
 
 # Premake5.
-/obj
-/bin
-/Makefile
+obj/
+bin/
+Makefile
 *.make
-/compile_commands.json
+compile_commands.json
