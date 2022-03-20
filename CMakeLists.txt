@@ -21,6 +21,13 @@ if(NOT fmt_FOUND)
     FetchContent_MakeAvailable(fmt)
 endif()
 
+FetchContent_Declare(
+    magic_enum
+    GIT_REPOSITORY "https://github.com/Neargye/magic_enum.git"
+    GIT_TAG "v0.7.3"
+)
+FetchContent_MakeAvailable(magic_enum)
+
 add_executable(bm bm.cpp)
-target_link_libraries(bm PRIVATE fmt::fmt)
+target_link_libraries(bm PRIVATE fmt::fmt magic_enum::magic_enum)
 target_compile_features(bm PRIVATE cxx_std_20)

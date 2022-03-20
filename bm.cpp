@@ -1,7 +1,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <fmt/format.h>
+#include <magic_enum.hpp>
 #include <stdexcept>
 
 using word = std::int64_t;
@@ -9,6 +11,9 @@ using word = std::int64_t;
 enum struct inst_type {
     push,
     plus,
+    minus,
+    mult,
+    div,
 };
 
 struct inst {
@@ -25,6 +30,18 @@ struct inst {
     static constexpr inst plus() {
         return inst{.type = inst_type::plus};
     }
+
+    static constexpr inst minus() {
+        return inst{.type = inst_type::minus};
+    }
+
+    static constexpr inst mult() {
+        return inst{.type = inst_type::mult};
+    }
+
+    static constexpr inst div() {
+        return inst{.type = inst_type::div};
+    }
 };
 
 struct stack_overflow_error : std::runtime_error {
@@ -35,6 +52,12 @@ struct stack_overflow_error : std::runtime_error {
 
 struct stack_underflow_error : std::runtime_error {
     stack_underflow_error() : std::runtime_error("stack hit bottom") {
+    }
+};
+
+struct illegal_inst_error : std::runtime_error {
+    explicit illegal_inst_error(int type)
+        : std::runtime_error(fmt::format("illegal instruction {:#x}", type)) {
     }
 };
 
@@ -61,6 +84,29 @@ struct bm {
                 stack[stack_size - 2] += stack[stack_size - 1];
                 stack_size -= 1;
                 break;
+            case inst_type::minus:
+                if (stack_size < 2) {
+                    throw stack_underflow_error{};
+                }
+                stack[stack_size - 2] -= stack[stack_size - 1];
+                stack_size -= 1;
+                break;
+            case inst_type::mult:
+                if (stack_size < 2) {
+                    throw stack_underflow_error{};
+                }
+                stack[stack_size - 2] *= stack[stack_size - 1];
+                stack_size -= 1;
+                break;
+            case inst_type::div:
+                if (stack_size < 2) {
+                    throw stack_underflow_error{};
+                }
+                stack[stack_size - 2] /= stack[stack_size - 1];
+                stack_size -= 1;
+                break;
+            default:
+                throw illegal_inst_error{static_cast<int>(i.type)};
         }
     }
 
@@ -73,15 +119,19 @@ struct bm {
 };
 
 constexpr std::array program = {
-    inst::push(69),
-    inst::push(420),
-    inst::plus(),
+    inst::push(69), inst::push(420), inst::plus(), inst::push(42), inst::minus(),
 };
 
 int main() {
     bm machine;
     for (const inst& i : program) {
-        machine.execute_inst(i);
+        fmt::print("{}\n", magic_enum::enum_name(i.type));
+        try {
+            machine.execute_inst(i);
+        } catch (const std::runtime_error& e) {
+            fmt::print(stderr, "ERROR: {}", e.what());
+            return -1;
+        }
         machine.dump();
     }
 }
