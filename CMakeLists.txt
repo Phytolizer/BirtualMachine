@@ -9,24 +9,20 @@ project(
 )
 
 set(CMAKE_CXX_STANDARD 20)
-include(FetchContent)
 
-find_package(fmt)
-if(NOT fmt_FOUND)
-    FetchContent_Declare(
-        fmt
-        GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
-        GIT_TAG "8.1.1"
-    )
-    FetchContent_MakeAvailable(fmt)
-endif()
+include(cmake/CPM.cmake)
 
-FetchContent_Declare(
-    magic_enum
-    GIT_REPOSITORY "https://github.com/Neargye/magic_enum.git"
+CPMAddPackage(
+    NAME "fmt"
+    GITHUB_REPOSITORY "fmtlib/fmt"
+    GIT_TAG "8.1.1"
+)
+
+CPMAddPackage(
+    NAME "magic_enum"
+    GITHUB_REPOSITORY "Neargye/magic_enum"
     GIT_TAG "v0.7.3"
 )
-FetchContent_MakeAvailable(magic_enum)
 
 add_executable(bm bm.cpp)
 target_link_libraries(bm PRIVATE fmt::fmt magic_enum::magic_enum)

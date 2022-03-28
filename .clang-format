@@ -1,7 +1,8 @@
 ---
 BasedOnStyle: LLVM
 PointerAlignment: Left
-IndentWidth: 4
+IndentWidth: 2
 IndentCaseLabels: true
-ColumnLimit: 100
+ColumnLimit: 80
 AllowShortFunctionsOnASingleLine: None
+IncludeBlocks: Regroup
