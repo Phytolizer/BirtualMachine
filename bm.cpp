@@ -1,6 +1,12 @@
+#include <cstdint>
 #include <fmt/core.h>
+#include <stack>
 
-class bm {};
+using word = std::int64_t;
+
+class bm {
+  std::stack<word> m_stack;
+};
 
 int main() {
   fmt::print("hello world\n");
