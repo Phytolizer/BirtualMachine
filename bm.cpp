@@ -12,6 +12,7 @@ enum class trap {
     stack_overflow,
     stack_underflow,
     illegal_inst,
+    div_by_zero,
 };
 
 class inst {
@@ -100,6 +101,9 @@ class machine {
                 }
                 auto a = std::move(m_stack.top());
                 m_stack.pop();
+                if (a == 0) {
+                    return trap::div_by_zero;
+                }
                 m_stack.top() /= a;
             } break;
             default:
@@ -121,18 +125,19 @@ constexpr std::array program = {
         inst::push(69),
         inst::push(420),
         inst::plus(),
-        inst::push(42),
-        inst::minus(),
+        inst::push(0),
+        inst::div(),
 };
 
 int main() {
     machine bm;
     for (auto i : program) {
+        fmt::print("{}\n", magic_enum::enum_name(i.ty()));
         auto t = bm.execute(i);
+        bm.dump();
         if (t != trap::ok) {
             fmt::print("trap activated: {}\n", magic_enum::enum_name(t));
             return 1;
         }
     }
-    bm.dump();
 }
