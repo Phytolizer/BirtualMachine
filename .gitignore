@@ -364,10 +364,5 @@ FodyWeavers.xsd
 
 # CMake binary dir.
 /build/
-
-# Premake5.
-obj/
-bin/
-Makefile
-*.make
-compile_commands.json
+/.vscode/
+/.idea/
