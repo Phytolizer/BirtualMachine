@@ -5,9 +5,9 @@
 using word = std::int64_t;
 
 class bm {
-  std::stack<word> m_stack;
+    std::stack<word> m_stack;
 };
 
 int main() {
-  fmt::print("hello world\n");
+    fmt::print("hello world\n");
 }
