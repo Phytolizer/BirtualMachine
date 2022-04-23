@@ -90,6 +90,7 @@ static void bm_dump(const Bm* bm, FILE* stream) {
 
 static const Inst program[] = {
 		INST_PUSH(34),
+		INST_PUSH(35),
 		INST_PLUS,
 };
 
