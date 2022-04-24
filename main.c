@@ -40,13 +40,28 @@ typedef struct {
 
 #define INST_TYPES_X \
 	X(push) \
-	X(plus)
+	X(plus) \
+	X(minus) \
+	X(mult) \
+	X(div)
 
 typedef enum {
 #define X(name) inst_type_##name,
 	INST_TYPES_X
 #undef X
 } InstType;
+
+static const char* inst_type_as_cstr(InstType type) {
+	switch (type) {
+#define X(name) \
+	case inst_type_##name: \
+		return "inst_type_" #name;
+		INST_TYPES_X
+#undef X
+		default:
+			assert(false && "unreachable");
+	}
+}
 
 typedef struct {
 	InstType type;
@@ -55,8 +70,14 @@ typedef struct {
 
 #define INST_PUSH(value) \
 	{ .type = inst_type_push, .operand = (value) }
-#define INST_PLUS \
+#define INST_PLUS() \
 	{ .type = inst_type_plus }
+#define INST_MINUS() \
+	{ .type = inst_type_minus }
+#define INST_MULT() \
+	{ .type = inst_type_mult }
+#define INST_DIV() \
+	{ .type = inst_type_div }
 
 Bm bm = {0};
 
@@ -75,6 +96,27 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 			bm->stack[bm->stack_size - 2] += bm->stack[bm->stack_size - 1];
 			bm->stack_size--;
 			break;
+		case inst_type_minus:
+			if (bm->stack_size < 2) {
+				return trap_stack_underflow;
+			}
+			bm->stack[bm->stack_size - 2] -= bm->stack[bm->stack_size - 1];
+			bm->stack_size--;
+			break;
+		case inst_type_mult:
+			if (bm->stack_size < 2) {
+				return trap_stack_underflow;
+			}
+			bm->stack[bm->stack_size - 2] *= bm->stack[bm->stack_size - 1];
+			bm->stack_size--;
+			break;
+		case inst_type_div:
+			if (bm->stack_size < 2) {
+				return trap_stack_underflow;
+			}
+			bm->stack[bm->stack_size - 2] /= bm->stack[bm->stack_size - 1];
+			bm->stack_size--;
+			break;
 		default:
 			return trap_illegal_inst;
 	}
@@ -89,22 +131,24 @@ static void bm_dump(const Bm* bm, FILE* stream) {
 }
 
 static const Inst program[] = {
-		INST_PUSH(34),
-		INST_PUSH(35),
-		INST_PLUS,
+		INST_PUSH(420),
+		INST_PUSH(69),
+		INST_PLUS(),
+		INST_PUSH(42),
+		INST_MINUS(),
 };
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(*(a)))
 
 int main(void) {
 	for (size_t i = 0; i < ARRAY_LEN(program); i++) {
+		printf("%s\n", inst_type_as_cstr(program[i].type));
 		Trap trap = bm_execute_inst(&bm, program[i]);
 		if (trap != trap_ok) {
 			fprintf(stderr, "Trap activated: %s\n", trap_as_cstr(trap));
 			bm_dump(&bm, stderr);
 			return 1;
 		}
+		bm_dump(&bm, stdout);
 	}
-
-	bm_dump(&bm, stdout);
 }
