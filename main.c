@@ -10,7 +10,8 @@
 	X(ok) \
 	X(stack_overflow) \
 	X(stack_underflow) \
-	X(illegal_inst)
+	X(illegal_inst) \
+	X(div_by_zero)
 
 typedef enum {
 #define X(name) trap_##name,
@@ -114,6 +115,9 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 			if (bm->stack_size < 2) {
 				return trap_stack_underflow;
 			}
+			if (bm->stack[bm->stack_size - 1] == 0) {
+				return trap_div_by_zero;
+			}
 			bm->stack[bm->stack_size - 2] /= bm->stack[bm->stack_size - 1];
 			bm->stack_size--;
 			break;
@@ -136,6 +140,10 @@ static const Inst program[] = {
 		INST_PLUS(),
 		INST_PUSH(42),
 		INST_MINUS(),
+		INST_PUSH(2),
+		INST_MULT(),
+		INST_PUSH(4),
+		INST_DIV(),
 };
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(*(a)))
