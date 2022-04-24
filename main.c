@@ -129,8 +129,12 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 
 static void bm_dump(const Bm* bm, FILE* stream) {
 	fprintf(stream, "Stack:\n");
-	for (size_t i = 0; i < bm->stack_size; i++) {
-		fprintf(stream, "    %" PRI_WORD "\n", bm->stack[i]);
+	if (bm->stack_size > 0) {
+		for (size_t i = 0; i < bm->stack_size; i++) {
+			fprintf(stream, "    %" PRI_WORD "\n", bm->stack[i]);
+		}
+	} else {
+		fprintf(stream, "    [empty]\n");
 	}
 }
 
