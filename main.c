@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #define BM_STACK_CAPACITY 1024
+#define BM_PROGRAM_CAPACITY 1024
 
 #define TRAPS_X \
 	X(ok) \
@@ -33,13 +34,6 @@ static const char* trap_as_cstr(Trap trap) {
 
 typedef int64_t Word;
 #define PRI_WORD PRId64
-
-typedef struct {
-	Word stack[BM_STACK_CAPACITY];
-	size_t stack_size;
-	size_t ip;
-	bool halt;
-} Bm;
 
 #define INST_TYPES_X \
 	X(push) \
@@ -73,20 +67,24 @@ typedef struct {
 	Word operand;
 } Inst;
 
-#define INST_PUSH(value) \
-	{ .type = inst_type_push, .operand = (value) }
-#define INST_PLUS() \
-	{ .type = inst_type_plus }
-#define INST_MINUS() \
-	{ .type = inst_type_minus }
-#define INST_MULT() \
-	{ .type = inst_type_mult }
-#define INST_DIV() \
-	{ .type = inst_type_div }
-#define INST_JUMP(dest) \
-	{ .type = inst_type_jump, .operand = (dest) }
-#define INST_HALT() \
-	{ .type = inst_type_halt }
+typedef struct {
+	Word stack[BM_STACK_CAPACITY];
+	size_t stack_size;
+
+	Inst program[BM_PROGRAM_CAPACITY];
+	size_t program_size;
+	size_t ip;
+
+	bool halt;
+} Bm;
+
+#define INST_PUSH(value) ((Inst){.type = inst_type_push, .operand = (value)})
+#define INST_PLUS() ((Inst){.type = inst_type_plus})
+#define INST_MINUS() ((Inst){.type = inst_type_minus})
+#define INST_MULT() ((Inst){.type = inst_type_mult})
+#define INST_DIV() ((Inst){.type = inst_type_div})
+#define INST_JUMP(dest) ((Inst){.type = inst_type_jump, .operand = (dest)})
+#define INST_HALT() ((Inst){.type = inst_type_halt})
 
 Bm bm = {0};
 
@@ -157,25 +155,25 @@ static void bm_dump(const Bm* bm, FILE* stream) {
 	}
 }
 
-static const Inst program[] = {
-		INST_PUSH(420),
-		INST_PUSH(69),
-		INST_PLUS(),
-		INST_PUSH(42),
-		INST_MINUS(),
-		INST_PUSH(2),
-		INST_MULT(),
-		INST_PUSH(4),
-		INST_DIV(),
-		INST_HALT(),
-};
-
-#define ARRAY_LEN(a) (sizeof(a) / sizeof(*(a)))
+static void bm_push_inst(Bm* bm, Inst inst) {
+	assert(bm->program_size < BM_PROGRAM_CAPACITY);
+	bm->program[bm->program_size++] = inst;
+}
 
 int main(void) {
+	bm_push_inst(&bm, INST_PUSH(69));
+	bm_push_inst(&bm, INST_PUSH(420));
+	bm_push_inst(&bm, INST_PLUS());
+	bm_push_inst(&bm, INST_PUSH(42));
+	bm_push_inst(&bm, INST_MINUS());
+	bm_push_inst(&bm, INST_PUSH(2));
+	bm_push_inst(&bm, INST_MULT());
+	bm_push_inst(&bm, INST_PUSH(4));
+	bm_push_inst(&bm, INST_DIV());
+	bm_push_inst(&bm, INST_HALT());
 	while (!bm.halt) {
-		printf("%s\n", inst_type_as_cstr(program[bm.ip].type));
-		Trap trap = bm_execute_inst(&bm, program[bm.ip]);
+		printf("%s\n", inst_type_as_cstr(bm.program[bm.ip].type));
+		Trap trap = bm_execute_inst(&bm, bm.program[bm.ip]);
 		if (trap != trap_ok) {
 			fprintf(stderr, "Trap activated: %s\n", trap_as_cstr(trap));
 			bm_dump(&bm, stderr);
