@@ -1,3 +1,6 @@
+#ifndef BM_H_
+#define BM_H_
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -29,18 +32,6 @@ typedef enum {
 #undef X
 } Trap;
 
-static const char* trap_as_cstr(Trap trap) {
-	switch (trap) {
-#define X(name) \
-	case trap_##name: \
-		return "trap_" #name;
-		TRAPS_X
-#undef X
-		default:
-			assert(false && "unreachable");
-	}
-}
-
 typedef int64_t Word;
 #define PRI_WORD PRId64
 
@@ -63,18 +54,6 @@ typedef enum {
 	INST_TYPES_X
 #undef X
 } InstType;
-
-static const char* inst_type_as_cstr(InstType type) {
-	switch (type) {
-#define X(name) \
-	case inst_type_##name: \
-		return "inst_type_" #name;
-		INST_TYPES_X
-#undef X
-		default:
-			assert(false && "unreachable");
-	}
-}
 
 typedef struct {
 	InstType type;
@@ -115,7 +94,58 @@ typedef struct {
 #define INST_DUP(ofs) \
 	{ .type = inst_type_dup, .operand = (ofs) }
 
-static Trap bm_execute_inst(Bm* bm) {
+typedef struct {
+	size_t count;
+	const char* data;
+} StringView;
+
+const char* trap_as_cstr(Trap trap);
+const char* inst_type_as_cstr(InstType type);
+Trap bm_execute_inst(Bm* bm);
+void bm_dump(const Bm* bm, FILE* stream);
+void bm_load_program_from_memory(Bm* bm, Inst* program, size_t program_size);
+void bm_save_program_to_file(Inst* program, size_t program_size, const char* file_path);
+void bm_load_program_from_file(Bm* bm, const char* file_path);
+StringView cstr_as_sv(const char* cstr);
+StringView sv_trim_left(StringView sv);
+StringView sv_trim_right(StringView sv);
+StringView sv_trim(StringView sv);
+StringView sv_chop_by_delim(StringView* sv, char delim);
+bool sv_eq(StringView a, StringView b);
+int sv_to_int(StringView sv);
+Inst bm_translate_line(StringView line);
+size_t bm_translate_source(StringView source, Inst* program, size_t program_capacity);
+StringView slurp_file(const char* file_path);
+
+#endif
+
+#ifdef BM_IMPLEMENTATION
+
+const char* trap_as_cstr(Trap trap) {
+	switch (trap) {
+#define X(name) \
+	case trap_##name: \
+		return "trap_" #name;
+		TRAPS_X
+#undef X
+		default:
+			assert(false && "unreachable");
+	}
+}
+
+const char* inst_type_as_cstr(InstType type) {
+	switch (type) {
+#define X(name) \
+	case inst_type_##name: \
+		return "inst_type_" #name;
+		INST_TYPES_X
+#undef X
+		default:
+			assert(false && "unreachable");
+	}
+}
+
+Trap bm_execute_inst(Bm* bm) {
 	if (bm->ip >= bm->program_size) {
 		return trap_illegal_inst_access;
 	}
@@ -220,7 +250,7 @@ static Trap bm_execute_inst(Bm* bm) {
 	return trap_ok;
 }
 
-static void bm_dump(const Bm* bm, FILE* stream) {
+void bm_dump(const Bm* bm, FILE* stream) {
 	fprintf(stream, "Stack:\n");
 	if (bm->stack_size > 0) {
 		for (size_t i = 0; i < bm->stack_size; i++) {
@@ -231,13 +261,13 @@ static void bm_dump(const Bm* bm, FILE* stream) {
 	}
 }
 
-static void bm_load_program_from_memory(Bm* bm, Inst* program, size_t program_size) {
+void bm_load_program_from_memory(Bm* bm, Inst* program, size_t program_size) {
 	assert(program_size < BM_PROGRAM_CAPACITY);
 	memcpy(bm->program, program, program_size * sizeof(Inst));
 	bm->program_size = program_size;
 }
 
-static void bm_save_program_to_file(Inst* program, size_t program_size, const char* file_path) {
+void bm_save_program_to_file(Inst* program, size_t program_size, const char* file_path) {
 	FILE* f = fopen(file_path, "wb");
 	if (f == NULL) {
 		fprintf(stderr, "ERROR: Could not open file `%s`: %s\n", file_path, strerror(errno));
@@ -253,7 +283,7 @@ static void bm_save_program_to_file(Inst* program, size_t program_size, const ch
 	fclose(f);
 }
 
-static void bm_load_program_from_file(Bm* bm, const char* file_path) {
+void bm_load_program_from_file(Bm* bm, const char* file_path) {
 	FILE* f = fopen(file_path, "rb");
 	if (f == NULL) {
 		fprintf(stderr, "ERROR: Could not open file `%s`: %s\n", file_path, strerror(errno));
@@ -289,26 +319,14 @@ static void bm_load_program_from_file(Bm* bm, const char* file_path) {
 	fclose(f);
 }
 
-char source_code[] = "push 0\n"
-					 "push 1\n"
-					 "dup 1\n"
-					 "dup 1\n"
-					 "plus\n"
-					 "jmp 2\n";
-
-typedef struct {
-	size_t count;
-	const char* data;
-} StringView;
-
-static StringView cstr_as_sv(const char* cstr) {
+StringView cstr_as_sv(const char* cstr) {
 	return (StringView){
 			.count = strlen(cstr),
 			.data = cstr,
 	};
 }
 
-static StringView sv_trim_left(StringView sv) {
+StringView sv_trim_left(StringView sv) {
 	size_t i = 0;
 	while (i < sv.count && isspace(sv.data[i])) {
 		i++;
@@ -319,7 +337,7 @@ static StringView sv_trim_left(StringView sv) {
 	};
 }
 
-static StringView sv_trim_right(StringView sv) {
+StringView sv_trim_right(StringView sv) {
 	size_t i = 0;
 	while (i < sv.count && isspace(sv.data[sv.count - 1 - i])) {
 		i++;
@@ -330,11 +348,11 @@ static StringView sv_trim_right(StringView sv) {
 	};
 }
 
-static StringView sv_trim(StringView sv) {
+StringView sv_trim(StringView sv) {
 	return sv_trim_right(sv_trim_left(sv));
 }
 
-static StringView sv_chop_by_delim(StringView* sv, char delim) {
+StringView sv_chop_by_delim(StringView* sv, char delim) {
 	size_t i = 0;
 	while (i < sv->count && sv->data[i] != delim) {
 		i++;
@@ -353,14 +371,14 @@ static StringView sv_chop_by_delim(StringView* sv, char delim) {
 	return result;
 }
 
-static bool sv_eq(StringView a, StringView b) {
+bool sv_eq(StringView a, StringView b) {
 	if (a.count != b.count) {
 		return false;
 	}
 	return a.count == 0 || memcmp(a.data, b.data, a.count) == 0;
 }
 
-static int sv_to_int(StringView sv) {
+int sv_to_int(StringView sv) {
 	int result = 0;
 	for (size_t i = 0; i < sv.count && isdigit(sv.data[i]); i++) {
 		result = result * 10 + sv.data[i] - '0';
@@ -368,7 +386,7 @@ static int sv_to_int(StringView sv) {
 	return result;
 }
 
-static Inst bm_translate_line(StringView line) {
+Inst bm_translate_line(StringView line) {
 	line = sv_trim_left(line);
 	StringView inst_name = sv_chop_by_delim(&line, ' ');
 	if (sv_eq(inst_name, cstr_as_sv("push"))) {
@@ -392,7 +410,7 @@ static Inst bm_translate_line(StringView line) {
 	}
 }
 
-static size_t bm_translate_source(StringView source, Inst* program, size_t program_capacity) {
+size_t bm_translate_source(StringView source, Inst* program, size_t program_capacity) {
 	size_t program_size = 0;
 	while (source.count > 0) {
 		assert(program_size < program_capacity);
@@ -405,7 +423,7 @@ static size_t bm_translate_source(StringView source, Inst* program, size_t progr
 	return program_size;
 }
 
-static StringView slurp_file(const char* file_path) {
+StringView slurp_file(const char* file_path) {
 	FILE* f = fopen(file_path, "r");
 	if (f == NULL) {
 		fprintf(stderr, "ERROR: Could not read file `%s`: %s\n", file_path, strerror(errno));
@@ -443,3 +461,5 @@ static StringView slurp_file(const char* file_path) {
 	fclose(f);
 	return (StringView){.count = m, .data = buffer};
 }
+
+#endif

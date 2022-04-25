@@ -1,4 +1,5 @@
-#include "./bm.c"
+#define BM_IMPLEMENTATION
+#include "bm.h"
 
 static Bm bm = {0};
 
