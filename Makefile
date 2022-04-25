@@ -2,10 +2,10 @@
 CFLAGS := -Wall -Wextra -Wpedantic -std=c11 -Werror=implicit-function-declaration -Werror=missing-prototypes -Wswitch-enum
 LIBS :=
 
-all: basm bmi
+all: basm bme
 basm: src/basm.c
 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
-bmi: src/bmi.c
+bme: src/bme.c
 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
 
 clean:
