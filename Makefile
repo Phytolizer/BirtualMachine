@@ -3,9 +3,9 @@ CFLAGS := -Wall -Wextra -Wpedantic -std=c11 -Werror=implicit-function-declaratio
 LIBS :=
 
 all: ebasm bmi
-ebasm: ebasm.c bm.c
+ebasm: src/ebasm.c src/bm.c
 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
-bmi: bmi.c bm.c
+bmi: src/bmi.c src/bm.c
 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
 
 clean:
