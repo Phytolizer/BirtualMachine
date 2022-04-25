@@ -11,3 +11,9 @@ bmi: bmi.c bm.c
 clean:
 	rm -vf *.o bm
 
+.PHONY: examples
+examples: ./examples/fib.bm ./examples/123.bm
+
+./examples/%.bm: ./examples/%.ebasm ebasm
+	./ebasm $< $@
+
