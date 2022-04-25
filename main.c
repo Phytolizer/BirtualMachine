@@ -135,11 +135,7 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 			bm->ip++;
 			break;
 		case inst_type_jump:
-			if (bm->stack_size < 1) {
-				return trap_stack_underflow;
-			}
-			bm->ip = bm->stack[bm->stack_size - 1];
-			bm->stack_size--;
+			bm->ip = inst.operand;
 			break;
 		case inst_type_halt:
 			bm->halt = true;
