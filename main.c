@@ -307,24 +307,64 @@ static StringView cstr_as_sv(const char* cstr) {
 	};
 }
 
-static StringView sv_chop_by_delim(StringView* sv, char delim) {
-	assert(false && "unimplemented");
-}
-
 static StringView sv_trim_left(StringView sv) {
-	assert(false && "unimplemented");
+	size_t i = 0;
+	while (i < sv.count && isspace(sv.data[i])) {
+		i++;
+	}
+	return (StringView){
+			.count = sv.count - i,
+			.data = sv.data + i,
+	};
 }
 
 static StringView sv_trim_right(StringView sv) {
-	assert(false && "unimplemented");
+	size_t i = 0;
+	while (i < sv.count && isspace(sv.data[sv.count - 1 - i])) {
+		i++;
+	}
+	return (StringView){
+			.count = sv.count - i,
+			.data = sv.data,
+	};
+}
+
+static StringView sv_trim(StringView sv) {
+	return sv_trim_right(sv_trim_left(sv));
+}
+
+static StringView sv_chop_by_delim(StringView* sv, char delim) {
+	size_t i = 0;
+	while (i < sv->count && sv->data[i] != delim) {
+		i++;
+	}
+	StringView result = {
+			.count = i,
+			.data = sv->data,
+	};
+	if (i < sv->count) {
+		sv->count -= i + 1;
+		sv->data += i + 1;
+	} else {
+		sv->count -= i;
+		sv->data += i;
+	}
+	return result;
 }
 
 static bool sv_eq(StringView a, StringView b) {
-	assert(false && "unimplemented");
+	if (a.count != b.count) {
+		return false;
+	}
+	return a.count == 0 || memcmp(a.data, b.data, a.count) == 0;
 }
 
-static int sv_to_int(StringView a) {
-	assert(false && "unimplemented");
+static int sv_to_int(StringView sv) {
+	int result = 0;
+	for (size_t i = 0; i < sv.count && isdigit(sv.data[i]); i++) {
+		result = result * 10 + sv.data[i] - '0';
+	}
+	return result;
 }
 
 static Inst bm_translate_line(StringView line) {
@@ -334,23 +374,89 @@ static Inst bm_translate_line(StringView line) {
 		line = sv_trim_left(line);
 		int operand = sv_to_int(sv_trim_right(line));
 		return (Inst){.type = inst_type_push, .operand = operand};
+	} else if (sv_eq(inst_name, cstr_as_sv("dup"))) {
+		line = sv_trim_left(line);
+		int operand = sv_to_int(sv_trim_right(line));
+		return (Inst){.type = inst_type_dup, .operand = operand};
+	} else if (sv_eq(inst_name, cstr_as_sv("plus"))) {
+		return (Inst){.type = inst_type_plus};
+	} else if (sv_eq(inst_name, cstr_as_sv("jmp"))) {
+		line = sv_trim_left(line);
+		int operand = sv_to_int(sv_trim_right(line));
+		return (Inst){.type = inst_type_dup, .operand = operand};
 	} else {
-		fprintf(stderr, "ERROR: `%.*s` is not a number\n", (int)inst_name.count, inst_name.data);
+		fprintf(stderr, "ERROR: unknown instruction `%.*s`\n", (int)inst_name.count,
+				inst_name.data);
 		exit(1);
 	}
 }
 
 static size_t bm_translate_source(StringView source, Inst* program, size_t program_capacity) {
+	size_t program_size = 0;
 	while (source.count > 0) {
-		StringView line = sv_chop_by_delim(&source, '\n');
-		printf("#%.*s#\n", (int)line.count, line.data);
+		assert(program_size < program_capacity);
+		StringView line = sv_trim(sv_chop_by_delim(&source, '\n'));
+		if (line.count > 0) {
+			program[program_size++] = bm_translate_line(line);
+		}
 	}
-	return 0;
+	return program_size;
+}
+
+static StringView slurp_file(const char* file_path) {
+	FILE* f = fopen(file_path, "r");
+	if (f == NULL) {
+		fprintf(stderr, "ERROR: Could not read file `%s`: %s\n", file_path, strerror(errno));
+		exit(1);
+	}
+
+	if (fseek(f, 0, SEEK_END) < 0) {
+		fprintf(stderr, "ERROR: Could not read file `%s`: %s\n", file_path, strerror(errno));
+		exit(1);
+	}
+
+	long m = ftell(f);
+	if (m < 0) {
+		fprintf(stderr, "ERROR: Could not read file `%s`: %s\n", file_path, strerror(errno));
+		exit(1);
+	}
+
+	char* buffer = malloc(m);
+	if (buffer == NULL) {
+		fprintf(stderr, "ERROR: Could not allocate memory for file: %s\n", strerror(errno));
+		exit(1);
+	}
+
+	if (fseek(f, 0, SEEK_SET) < 0) {
+		fprintf(stderr, "ERROR: Could not read file `%s`: %s\n", file_path, strerror(errno));
+		exit(1);
+	}
+
+	fread(buffer, 1, m, f);
+	if (ferror(f)) {
+		fprintf(stderr, "ERROR: Could not read file `%s`: %s\n", file_path, strerror(errno));
+		exit(1);
+	}
+
+	fclose(f);
+	return (StringView){.count = m, .data = buffer};
 }
 
 static Bm bm = {0};
-int main(void) {
-	bm.program_size = bm_translate_source(cstr_as_sv(source_code), bm.program, BM_PROGRAM_CAPACITY);
+
+int main(int argc, char** argv) {
+	if (argc < 3) {
+		fprintf(stderr, "Usage: ./bm <input.ebasm> <output.bm>\n");
+		fprintf(stderr, "ERROR: expected input and output\n");
+		exit(1);
+	}
+	const char* input_file_path = argv[1];
+	const char* output_file_path = argv[2];
+
+	StringView source = slurp_file(input_file_path);
+	bm.program_size = bm_translate_source(source, bm.program, BM_PROGRAM_CAPACITY);
+
+	bm_save_program_to_file(bm.program, bm.program_size, output_file_path);
 }
 
 static int __attribute__((unused)) main2(void) {
