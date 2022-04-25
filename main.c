@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <stdbool.h>
@@ -43,6 +44,7 @@ typedef int64_t Word;
 #define PRI_WORD PRId64
 
 #define INST_TYPES_X \
+	X(nop) \
 	X(push) \
 	X(plus) \
 	X(minus) \
@@ -89,6 +91,8 @@ typedef struct {
 	bool halt;
 } Bm;
 
+#define INST_NOP() \
+	{ .type = inst_type_nop }
 #define INST_PUSH(value) \
 	{ .type = inst_type_push, .operand = (value) }
 #define INST_PLUS() \
@@ -116,6 +120,9 @@ static Trap bm_execute_inst(Bm* bm) {
 	}
 	Inst inst = bm->program[bm->ip];
 	switch (inst.type) {
+		case inst_type_nop:
+			bm->ip++;
+			break;
 		case inst_type_push:
 			if (bm->stack_size >= BM_STACK_CAPACITY) {
 				return trap_stack_overflow;
@@ -281,9 +288,73 @@ static void bm_load_program_from_file(Bm* bm, const char* file_path) {
 	fclose(f);
 }
 
+char source_code[] = "push 0\n"
+					 "push 1\n"
+					 "dup 1\n"
+					 "dup 1\n"
+					 "plus\n"
+					 "jmp 2\n";
+
+typedef struct {
+	size_t count;
+	const char* data;
+} StringView;
+
+static StringView cstr_as_sv(const char* cstr) {
+	return (StringView){
+			.count = strlen(cstr),
+			.data = cstr,
+	};
+}
+
+static StringView sv_chop_by_delim(StringView* sv, char delim) {
+	assert(false && "unimplemented");
+}
+
+static StringView sv_trim_left(StringView sv) {
+	assert(false && "unimplemented");
+}
+
+static StringView sv_trim_right(StringView sv) {
+	assert(false && "unimplemented");
+}
+
+static bool sv_eq(StringView a, StringView b) {
+	assert(false && "unimplemented");
+}
+
+static int sv_to_int(StringView a) {
+	assert(false && "unimplemented");
+}
+
+static Inst bm_translate_line(StringView line) {
+	line = sv_trim_left(line);
+	StringView inst_name = sv_chop_by_delim(&line, ' ');
+	if (sv_eq(inst_name, cstr_as_sv("push"))) {
+		line = sv_trim_left(line);
+		int operand = sv_to_int(sv_trim_right(line));
+		return (Inst){.type = inst_type_push, .operand = operand};
+	} else {
+		fprintf(stderr, "ERROR: `%.*s` is not a number\n", (int)inst_name.count, inst_name.data);
+		exit(1);
+	}
+}
+
+static size_t bm_translate_source(StringView source, Inst* program, size_t program_capacity) {
+	while (source.count > 0) {
+		StringView line = sv_chop_by_delim(&source, '\n');
+		printf("#%.*s#\n", (int)line.count, line.data);
+	}
+	return 0;
+}
+
 static Bm bm = {0};
 int main(void) {
-	bm_load_program_from_file(&bm, "fib.bm");
+	bm.program_size = bm_translate_source(cstr_as_sv(source_code), bm.program, BM_PROGRAM_CAPACITY);
+}
+
+static int __attribute__((unused)) main2(void) {
+	bm_translate_source(cstr_as_sv(source_code), bm.program, BM_PROGRAM_CAPACITY);
 	for (size_t i = 0; i < BM_EXECUTION_LIMIT && !bm.halt; i++) {
 		printf("%s\n", inst_type_as_cstr(bm.program[bm.ip].type));
 		Trap trap = bm_execute_inst(&bm);
@@ -294,4 +365,5 @@ int main(void) {
 		}
 	}
 	bm_dump(&bm, stdout);
+	return 0;
 }
