@@ -14,7 +14,8 @@
 	X(stack_overflow) \
 	X(stack_underflow) \
 	X(illegal_inst) \
-	X(div_by_zero)
+	X(div_by_zero) \
+	X(illegal_inst_access)
 
 typedef enum {
 #define X(name) trap_##name,
@@ -96,6 +97,9 @@ typedef struct {
 	{ .type = inst_type_halt }
 
 static Trap bm_execute_inst(Bm* bm) {
+	if (bm->ip < 0 || bm->ip >= bm->program_size) {
+		return trap_illegal_inst_access;
+	}
 	Inst inst = bm->program[bm->ip];
 	switch (inst.type) {
 		case inst_type_push:
@@ -166,6 +170,7 @@ static void bm_dump(const Bm* bm, FILE* stream) {
 static void bm_load_program_from_memory(Bm* bm, Inst* program, size_t program_size) {
 	assert(program_size < BM_PROGRAM_CAPACITY);
 	memcpy(bm->program, program, program_size * sizeof(Inst));
+	bm->program_size = program_size;
 }
 
 static Bm bm = {0};
