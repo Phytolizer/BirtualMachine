@@ -384,7 +384,7 @@ static Inst bm_translate_line(StringView line) {
 	} else if (sv_eq(inst_name, cstr_as_sv("jmp"))) {
 		line = sv_trim_left(line);
 		int operand = sv_to_int(sv_trim_right(line));
-		return (Inst){.type = inst_type_dup, .operand = operand};
+		return (Inst){.type = inst_type_jump, .operand = operand};
 	} else {
 		fprintf(stderr, "ERROR: unknown instruction `%.*s`\n", (int)inst_name.count,
 				inst_name.data);
@@ -401,6 +401,7 @@ static size_t bm_translate_source(StringView source, Inst* program, size_t progr
 			program[program_size++] = bm_translate_line(line);
 		}
 	}
+	program[program_size++] = (Inst){.type = inst_type_halt};
 	return program_size;
 }
 
