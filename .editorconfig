@@ -1,5 +1,16 @@
 [*]
 insert_final_newline = true
 trim_trailing_whitespace = true
-indent_style = space
+charset = utf-8
+
+[*.{c,h}]
+indent_style = tab
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+[*.ebasm]
+indent_style = tab
 indent_size = 4

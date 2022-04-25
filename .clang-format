@@ -10,3 +10,5 @@ AlignAfterOpenBracket: false
 IncludeBlocks: Regroup
 AlignEscapedNewlines: DontAlign
 IndentCaseLabels: true
+UseTab: AlignWithSpaces
+TabWidth: 4

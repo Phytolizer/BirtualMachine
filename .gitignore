@@ -366,3 +366,10 @@ FodyWeavers.xsd
 /build/
 /.vscode/
 /.idea/
+
+*.o
+bm
+ebasm
+bmi
+*.bm
+compile_commands.json
