@@ -5,7 +5,7 @@ static Bm bm = {0};
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
-		fprintf(stderr, "Usage: ./bmi <input.bm>\n");
+		fprintf(stderr, "Usage: ./bme <input.bm>\n");
 		fprintf(stderr, "ERROR: expected input\n");
 		exit(1);
 	}
