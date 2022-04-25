@@ -37,6 +37,8 @@ typedef int64_t Word;
 typedef struct {
 	Word stack[BM_STACK_CAPACITY];
 	size_t stack_size;
+	size_t ip;
+	bool halt;
 } Bm;
 
 #define INST_TYPES_X \
@@ -44,7 +46,9 @@ typedef struct {
 	X(plus) \
 	X(minus) \
 	X(mult) \
-	X(div)
+	X(div) \
+	X(jump) \
+	X(halt)
 
 typedef enum {
 #define X(name) inst_type_##name,
@@ -79,6 +83,10 @@ typedef struct {
 	{ .type = inst_type_mult }
 #define INST_DIV() \
 	{ .type = inst_type_div }
+#define INST_JUMP(dest) \
+	{ .type = inst_type_jump, .operand = (dest) }
+#define INST_HALT() \
+	{ .type = inst_type_halt }
 
 Bm bm = {0};
 
@@ -89,6 +97,7 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 				return trap_stack_overflow;
 			}
 			bm->stack[bm->stack_size++] = inst.operand;
+			bm->ip++;
 			break;
 		case inst_type_plus:
 			if (bm->stack_size < 2) {
@@ -96,6 +105,7 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 			}
 			bm->stack[bm->stack_size - 2] += bm->stack[bm->stack_size - 1];
 			bm->stack_size--;
+			bm->ip++;
 			break;
 		case inst_type_minus:
 			if (bm->stack_size < 2) {
@@ -103,6 +113,7 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 			}
 			bm->stack[bm->stack_size - 2] -= bm->stack[bm->stack_size - 1];
 			bm->stack_size--;
+			bm->ip++;
 			break;
 		case inst_type_mult:
 			if (bm->stack_size < 2) {
@@ -110,6 +121,7 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 			}
 			bm->stack[bm->stack_size - 2] *= bm->stack[bm->stack_size - 1];
 			bm->stack_size--;
+			bm->ip++;
 			break;
 		case inst_type_div:
 			if (bm->stack_size < 2) {
@@ -120,6 +132,17 @@ static Trap bm_execute_inst(Bm* bm, Inst inst) {
 			}
 			bm->stack[bm->stack_size - 2] /= bm->stack[bm->stack_size - 1];
 			bm->stack_size--;
+			bm->ip++;
+			break;
+		case inst_type_jump:
+			if (bm->stack_size < 1) {
+				return trap_stack_underflow;
+			}
+			bm->ip = bm->stack[bm->stack_size - 1];
+			bm->stack_size--;
+			break;
+		case inst_type_halt:
+			bm->halt = true;
 			break;
 		default:
 			return trap_illegal_inst;
@@ -148,14 +171,15 @@ static const Inst program[] = {
 		INST_MULT(),
 		INST_PUSH(4),
 		INST_DIV(),
+		INST_HALT(),
 };
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof(*(a)))
 
 int main(void) {
-	for (size_t i = 0; i < ARRAY_LEN(program); i++) {
-		printf("%s\n", inst_type_as_cstr(program[i].type));
-		Trap trap = bm_execute_inst(&bm, program[i]);
+	while (!bm.halt) {
+		printf("%s\n", inst_type_as_cstr(program[bm.ip].type));
+		Trap trap = bm_execute_inst(&bm, program[bm.ip]);
 		if (trap != trap_ok) {
 			fprintf(stderr, "Trap activated: %s\n", trap_as_cstr(trap));
 			bm_dump(&bm, stderr);
