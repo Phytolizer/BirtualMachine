@@ -1,14 +1,14 @@
 .PHONY: all run clean
 CFLAGS := -Wall -Wextra -Wpedantic -std=c11 -Werror=implicit-function-declaration -Werror=missing-prototypes -Wswitch-enum
+LIBS :=
 
-all: bm
+all: ebasm bmi
 run: all
 	./bm
-bm: main.o
-	$(CC) $(CFLAGS) $^ -o $@
-
-.c.o:
-	$(CC) $(CFLAGS) -c $^ -o $@
+ebasm: ebasm.c bm.c
+	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
+bmi: bmi.c bm.c
+	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
 
 clean:
 	rm -vf *.o bm

@@ -369,4 +369,7 @@ FodyWeavers.xsd
 
 *.o
 bm
+ebasm
+bmi
+*.bm
 compile_commands.json

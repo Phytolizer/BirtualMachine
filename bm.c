@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -440,36 +441,4 @@ static StringView slurp_file(const char* file_path) {
 
 	fclose(f);
 	return (StringView){.count = m, .data = buffer};
-}
-
-static Bm bm = {0};
-
-int main(int argc, char** argv) {
-	if (argc < 3) {
-		fprintf(stderr, "Usage: ./bm <input.ebasm> <output.bm>\n");
-		fprintf(stderr, "ERROR: expected input and output\n");
-		exit(1);
-	}
-	const char* input_file_path = argv[1];
-	const char* output_file_path = argv[2];
-
-	StringView source = slurp_file(input_file_path);
-	bm.program_size = bm_translate_source(source, bm.program, BM_PROGRAM_CAPACITY);
-
-	bm_save_program_to_file(bm.program, bm.program_size, output_file_path);
-}
-
-static int __attribute__((unused)) main2(void) {
-	bm_translate_source(cstr_as_sv(source_code), bm.program, BM_PROGRAM_CAPACITY);
-	for (size_t i = 0; i < BM_EXECUTION_LIMIT && !bm.halt; i++) {
-		printf("%s\n", inst_type_as_cstr(bm.program[bm.ip].type));
-		Trap trap = bm_execute_inst(&bm);
-		if (trap != trap_ok) {
-			fprintf(stderr, "Trap activated: %s\n", trap_as_cstr(trap));
-			bm_dump(&bm, stderr);
-			return 1;
-		}
-	}
-	bm_dump(&bm, stdout);
-	return 0;
 }
