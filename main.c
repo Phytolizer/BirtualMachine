@@ -1,12 +1,15 @@
 #include <assert.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define BM_STACK_CAPACITY 1024
 #define BM_PROGRAM_CAPACITY 1024
+#define BM_EXECUTION_LIMIT 69
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 #define TRAPS_X \
@@ -15,7 +18,8 @@
 	X(stack_underflow) \
 	X(illegal_inst) \
 	X(div_by_zero) \
-	X(illegal_inst_access)
+	X(illegal_inst_access) \
+	X(illegal_operand)
 
 typedef enum {
 #define X(name) trap_##name,
@@ -45,7 +49,11 @@ typedef int64_t Word;
 	X(mult) \
 	X(div) \
 	X(jump) \
-	X(halt)
+	X(jump_if) \
+	X(eq) \
+	X(halt) \
+	X(print_debug) \
+	X(dup)
 
 typedef enum {
 #define X(name) inst_type_##name,
@@ -95,9 +103,15 @@ typedef struct {
 	{ .type = inst_type_jump, .operand = (dest) }
 #define INST_HALT() \
 	{ .type = inst_type_halt }
+#define INST_JUMP_IF(dest) \
+	{ .type = inst_type_jump_if, .operand = (dest) }
+#define INST_EQ() \
+	{ .type = inst_type_eq }
+#define INST_DUP(ofs) \
+	{ .type = inst_type_dup, .operand = (ofs) }
 
 static Trap bm_execute_inst(Bm* bm) {
-	if (bm->ip < 0 || bm->ip >= bm->program_size) {
+	if (bm->ip >= bm->program_size) {
 		return trap_illegal_inst_access;
 	}
 	Inst inst = bm->program[bm->ip];
@@ -150,6 +164,48 @@ static Trap bm_execute_inst(Bm* bm) {
 		case inst_type_halt:
 			bm->halt = true;
 			break;
+		case inst_type_eq:
+			if (bm->stack_size < 2) {
+				return trap_stack_underflow;
+			}
+			bm->stack[bm->stack_size - 2] =
+					bm->stack[bm->stack_size - 2] == bm->stack[bm->stack_size - 1];
+			bm->stack_size--;
+			bm->ip++;
+			break;
+		case inst_type_jump_if:
+			if (bm->stack_size < 1) {
+				return trap_stack_underflow;
+			}
+			if (bm->stack[bm->stack_size - 1] != 0) {
+				bm->stack_size--;
+				bm->ip = inst.operand;
+			} else {
+				bm->ip++;
+			}
+			break;
+		case inst_type_print_debug:
+			if (bm->stack_size < 1) {
+				return trap_stack_underflow;
+			}
+			printf("%" PRI_WORD "\n", bm->stack[bm->stack_size - 1]);
+			bm->stack_size--;
+			bm->ip++;
+			break;
+		case inst_type_dup:
+			if (bm->stack_size >= BM_STACK_CAPACITY) {
+				return trap_stack_overflow;
+			}
+			if (bm->stack_size - inst.operand <= 0) {
+				return trap_stack_underflow;
+			}
+			if (inst.operand < 0) {
+				return trap_illegal_operand;
+			}
+			bm->stack[bm->stack_size] = bm->stack[bm->stack_size - 1 - inst.operand];
+			bm->stack_size++;
+			bm->ip++;
+			break;
 		default:
 			return trap_illegal_inst;
 	}
@@ -173,23 +229,35 @@ static void bm_load_program_from_memory(Bm* bm, Inst* program, size_t program_si
 	bm->program_size = program_size;
 }
 
+static void bm_save_program_to_file(Inst* program, size_t program_size, const char* file_path) {
+	FILE* f = fopen(file_path, "wb");
+	if (f == NULL) {
+		fprintf(stderr, "ERROR: Could not open file `%s`: %s\n", file_path, strerror(errno));
+		exit(1);
+	}
+
+	fwrite(program, sizeof(Inst), program_size, f);
+	if (ferror(f)) {
+		fprintf(stderr, "ERROR: Could not write to file `%s`: %s\n", file_path, strerror(errno));
+		exit(1);
+	}
+
+	fclose(f);
+}
+
 static Bm bm = {0};
 static Inst program[] = {
-		INST_PUSH(69),
-		INST_PUSH(420),
+		INST_PUSH(0),
+		INST_PUSH(1),
+		INST_DUP(1),
+		INST_DUP(1),
 		INST_PLUS(),
-		INST_PUSH(42),
-		INST_MINUS(),
-		INST_PUSH(2),
-		INST_MULT(),
-		INST_PUSH(4),
-		INST_DIV(),
-		INST_HALT(),
+		INST_JUMP(2),
 };
 
 int main(void) {
 	bm_load_program_from_memory(&bm, program, ARRAY_LEN(program));
-	while (!bm.halt) {
+	for (size_t i = 0; i < BM_EXECUTION_LIMIT && !bm.halt; i++) {
 		printf("%s\n", inst_type_as_cstr(bm.program[bm.ip].type));
 		Trap trap = bm_execute_inst(&bm);
 		if (trap != trap_ok) {
@@ -197,6 +265,7 @@ int main(void) {
 			bm_dump(&bm, stderr);
 			return 1;
 		}
-		bm_dump(&bm, stdout);
 	}
+	bm_dump(&bm, stdout);
+	bm_save_program_to_file(program, ARRAY_LEN(program), "fib.bm");
 }
