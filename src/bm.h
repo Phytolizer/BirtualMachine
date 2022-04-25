@@ -104,7 +104,7 @@ const char* inst_type_as_cstr(InstType type);
 Trap bm_execute_inst(Bm* bm);
 void bm_dump(const Bm* bm, FILE* stream);
 void bm_load_program_from_memory(Bm* bm, Inst* program, size_t program_size);
-void bm_save_program_to_file(Inst* program, size_t program_size, const char* file_path);
+void bm_save_program_to_file(const Bm* bm, const char* file_path);
 void bm_load_program_from_file(Bm* bm, const char* file_path);
 StringView cstr_as_sv(const char* cstr);
 StringView sv_trim_left(StringView sv);
@@ -267,14 +267,14 @@ void bm_load_program_from_memory(Bm* bm, Inst* program, size_t program_size) {
 	bm->program_size = program_size;
 }
 
-void bm_save_program_to_file(Inst* program, size_t program_size, const char* file_path) {
+void bm_save_program_to_file(const Bm* bm, const char* file_path) {
 	FILE* f = fopen(file_path, "wb");
 	if (f == NULL) {
 		fprintf(stderr, "ERROR: Could not open file `%s`: %s\n", file_path, strerror(errno));
 		exit(1);
 	}
 
-	fwrite(program, sizeof(Inst), program_size, f);
+	fwrite(bm->program, sizeof(Inst), bm->program_size, f);
 	if (ferror(f)) {
 		fprintf(stderr, "ERROR: Could not write to file `%s`: %s\n", file_path, strerror(errno));
 		exit(1);
