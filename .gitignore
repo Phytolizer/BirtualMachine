@@ -1,6 +1,6 @@
 /.cache
 *.o
-ebasm
+basm
 bmi
 *.bm
 compile_commands.json
