@@ -2,7 +2,7 @@
 	push 0
 	push 1
 	dup 1
-# Middle Comment
+# The loop
 	dup 1
 	plus
 	jmp 2
