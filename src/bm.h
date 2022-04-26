@@ -431,7 +431,7 @@ size_t bm_translate_source(StringView source, Inst* program, size_t program_capa
 	while (source.count > 0) {
 		assert(program_size < program_capacity);
 		StringView line = sv_trim(sv_chop_by_delim(&source, '\n'));
-		if (line.count > 0) {
+		if (line.count > 0 && line.data[0] != '#') {
 			program[program_size++] = bm_translate_line(line);
 		}
 	}
