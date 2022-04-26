@@ -15,6 +15,7 @@
 #define BM_STACK_CAPACITY 1024
 #define BM_PROGRAM_CAPACITY 1024
 #define BM_EXECUTION_LIMIT 69
+#define LABEL_CAPACITY 1024
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 #define TRAPS_X \
@@ -65,8 +66,8 @@ typedef struct {
 	size_t stack_size;
 
 	Inst program[BM_PROGRAM_CAPACITY];
-	size_t program_size;
-	size_t ip;
+	Word program_size;
+	Word ip;
 
 	bool halt;
 } Bm;
@@ -99,6 +100,16 @@ typedef struct {
 	const char* data;
 } StringView;
 
+typedef struct {
+	StringView name;
+	Word addr;
+} Label;
+
+typedef struct {
+	Label labels[LABEL_CAPACITY];
+	size_t labels_size;
+} LabelTable;
+
 const char* trap_as_cstr(Trap trap);
 const char* inst_type_as_cstr(InstType type);
 Trap bm_execute_inst(Bm* bm);
@@ -114,8 +125,10 @@ StringView sv_trim(StringView sv);
 StringView sv_chop_by_delim(StringView* sv, char delim);
 bool sv_eq(StringView a, StringView b);
 int sv_to_int(StringView sv);
-Inst bm_translate_line(StringView line);
-size_t bm_translate_source(StringView source, Inst* program, size_t program_capacity);
+Inst bm_translate_line(const Bm* bm, LabelTable* lt, StringView line);
+void bm_translate_source(StringView source, Bm* bm, LabelTable* lt);
+int label_table_find(const LabelTable* lt, StringView name);
+void label_table_push(LabelTable* lt, StringView name, Word addr);
 StringView slurp_file(const char* file_path);
 
 #endif
@@ -402,11 +415,33 @@ int sv_to_int(StringView sv) {
 	return result;
 }
 
-Inst bm_translate_line(StringView line) {
+int label_table_find(const LabelTable* lt, StringView name) {
+	for (size_t i = 0; i < lt->labels_size; i++) {
+		if (sv_eq(lt->labels[i].name, name)) {
+			return (int)i;
+		}
+	}
+	return -1;
+}
+
+void label_table_push(LabelTable* lt, StringView name, Word addr) {
+	assert(lt->labels_size < LABEL_CAPACITY);
+	lt->labels[lt->labels_size++] = (Label){.name = name, .addr = addr};
+}
+
+Inst bm_translate_line(const Bm* bm, LabelTable* lt, StringView line) {
 	line = sv_trim_left(line);
 	StringView inst_name = sv_chop_by_delim(&line, ' ');
 	StringView operand = sv_trim(sv_chop_by_delim(&line, '#'));
-	if (sv_eq(inst_name, cstr_as_sv("push"))) {
+
+	if (inst_name.count > 0 && inst_name.data[inst_name.count - 1] == ':') {
+		StringView label = {
+				.count = inst_name.count - 1,
+				.data = inst_name.data,
+		};
+		label_table_push(lt, label, bm->program_size);
+		return (Inst){.type = inst_type_nop};
+	} else if (sv_eq(inst_name, cstr_as_sv("push"))) {
 		line = sv_trim_left(line);
 		return (Inst){.type = inst_type_push, .operand = sv_to_int(operand)};
 	} else if (sv_eq(inst_name, cstr_as_sv("dup"))) {
@@ -416,7 +451,7 @@ Inst bm_translate_line(StringView line) {
 		return (Inst){.type = inst_type_plus};
 	} else if (sv_eq(inst_name, cstr_as_sv("jmp"))) {
 		line = sv_trim_left(line);
-		return (Inst){.type = inst_type_jump, .operand = sv_to_int(operand)};
+		return (Inst){.type = inst_type_jump, .operand = 0};
 	} else {
 		fprintf(stderr, "ERROR: unknown instruction `%.*s`\n", (int)inst_name.count,
 				inst_name.data);
@@ -424,17 +459,20 @@ Inst bm_translate_line(StringView line) {
 	}
 }
 
-size_t bm_translate_source(StringView source, Inst* program, size_t program_capacity) {
-	size_t program_size = 0;
+void bm_translate_source(StringView source, Bm* bm, LabelTable* lt) {
 	while (source.count > 0) {
-		assert(program_size < program_capacity);
+		assert(bm->program_size < BM_PROGRAM_CAPACITY);
 		StringView line = sv_trim(sv_chop_by_delim(&source, '\n'));
 		if (line.count > 0 && line.data[0] != '#') {
-			program[program_size++] = bm_translate_line(line);
+			bm->program[bm->program_size++] = bm_translate_line(bm, lt, line);
 		}
 	}
-	program[program_size++] = (Inst){.type = inst_type_halt};
-	return program_size;
+	bm->program[bm->program_size++] = (Inst){.type = inst_type_halt};
+
+	for (size_t i = 0; i < lt->labels_size; i++) {
+		printf("%.*s -> %" PRI_WORD "\n", (int)lt->labels[i].name.count, lt->labels[i].name.data,
+				lt->labels[i].addr);
+	}
 }
 
 StringView slurp_file(const char* file_path) {

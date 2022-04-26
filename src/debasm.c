@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
 
 	bm_load_program_from_file(&bm, input_file_path);
 
-	for (size_t i = 0; i < bm.program_size; i++) {
+	for (Word i = 0; i < bm.program_size; i++) {
 		switch (bm.program[i].type) {
 			case inst_type_nop:
 				printf("nop\n");
