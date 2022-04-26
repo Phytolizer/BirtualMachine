@@ -405,20 +405,18 @@ int sv_to_int(StringView sv) {
 Inst bm_translate_line(StringView line) {
 	line = sv_trim_left(line);
 	StringView inst_name = sv_chop_by_delim(&line, ' ');
+	StringView operand = sv_trim(sv_chop_by_delim(&line, '#'));
 	if (sv_eq(inst_name, cstr_as_sv("push"))) {
 		line = sv_trim_left(line);
-		int operand = sv_to_int(sv_trim_right(line));
-		return (Inst){.type = inst_type_push, .operand = operand};
+		return (Inst){.type = inst_type_push, .operand = sv_to_int(operand)};
 	} else if (sv_eq(inst_name, cstr_as_sv("dup"))) {
 		line = sv_trim_left(line);
-		int operand = sv_to_int(sv_trim_right(line));
-		return (Inst){.type = inst_type_dup, .operand = operand};
+		return (Inst){.type = inst_type_dup, .operand = sv_to_int(operand)};
 	} else if (sv_eq(inst_name, cstr_as_sv("plus"))) {
 		return (Inst){.type = inst_type_plus};
 	} else if (sv_eq(inst_name, cstr_as_sv("jmp"))) {
 		line = sv_trim_left(line);
-		int operand = sv_to_int(sv_trim_right(line));
-		return (Inst){.type = inst_type_jump, .operand = operand};
+		return (Inst){.type = inst_type_jump, .operand = sv_to_int(operand)};
 	} else {
 		fprintf(stderr, "ERROR: unknown instruction `%.*s`\n", (int)inst_name.count,
 				inst_name.data);
