@@ -3,7 +3,7 @@ LIBS :=
 OBJS := src/basm.o src/bme.o src/debasm.o
 DEPS := $(OBJS:.o=.d)
 
-CPPFLAGS += -MMD -MP
+CPPFLAGS += --write-user-dependencies -MP
 
 .PHONY: all
 all: basm bme debasm
