@@ -7,7 +7,7 @@ Birtual Machine
 ```
 make
 make examples
-./bme ./examples/fib.bm
+./bme -i ./examples/fib.bm
 ```
 
 ## Components
