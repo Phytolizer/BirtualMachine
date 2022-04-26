@@ -44,7 +44,6 @@ int main(int argc, char** argv) {
 				printf("eq\n");
 				break;
 			case inst_type_halt:
-				printf("halt\n");
 				break;
 			case inst_type_print_debug:
 				printf("print_debug\n");
