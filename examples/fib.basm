@@ -1,5 +1,5 @@
-# Top Comment
-	push 0    # Side Comment
+# First two Fibonacci numbers
+	push 0
 	push 1
 	dup 1
 # Middle Comment

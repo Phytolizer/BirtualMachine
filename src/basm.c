@@ -14,7 +14,7 @@ static char* shift(int* argc, char*** argv) {
 }
 
 static void usage(FILE* stream, const char* program) {
-	fprintf(stream, "Usage: %s <input.ebasm> <output.bm>\n", program);
+	fprintf(stream, "Usage: %s <input.basm> <output.bm>\n", program);
 }
 
 int main(int argc, char** argv) {
