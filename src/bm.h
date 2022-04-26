@@ -102,6 +102,7 @@ typedef struct {
 const char* trap_as_cstr(Trap trap);
 const char* inst_type_as_cstr(InstType type);
 Trap bm_execute_inst(Bm* bm);
+Trap bm_execute_program(Bm* bm, int limit);
 void bm_dump(const Bm* bm, FILE* stream);
 void bm_load_program_from_memory(Bm* bm, Inst* program, size_t program_size);
 void bm_save_program_to_file(const Bm* bm, const char* file_path);
@@ -247,6 +248,21 @@ Trap bm_execute_inst(Bm* bm) {
 		default:
 			return trap_illegal_inst;
 	}
+	return trap_ok;
+}
+
+Trap bm_execute_program(Bm* bm, int limit) {
+	while (limit != 0 && !bm->halt) {
+		Trap trap = bm_execute_inst(bm);
+		if (trap != trap_ok) {
+			return trap;
+		}
+
+		if (limit > 0) {
+			limit--;
+		}
+	}
+
 	return trap_ok;
 }
 
