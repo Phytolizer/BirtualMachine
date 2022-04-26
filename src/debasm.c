@@ -9,4 +9,8 @@ int main(int argc, char** argv) {
 		fprintf(stderr, "ERROR: no input provided\n");
 		exit(1);
 	}
+
+	for (size_t i = 0; i < bm.program_size; i++) {
+		switch (bm.program[i].type) {}
+	}
 }
