@@ -14,7 +14,7 @@ static char* shift(int* argc, char*** argv) {
 }
 
 static void usage(FILE* stream, const char* program) {
-	fprintf(stream, "Usage: %s -i <input.bm> [-l <limit>]\n", program);
+	fprintf(stream, "Usage: %s -i <input.bm> [-l <limit>] [-h]\n", program);
 }
 
 int main(int argc, char** argv) {
@@ -41,6 +41,9 @@ int main(int argc, char** argv) {
 
 			errno = 0;
 			limit = atoi(shift(&argc, &argv));
+		} else if (strcmp(flag, "-h") == 0) {
+			usage(stdout, program);
+			exit(0);
 		} else {
 			if (argc == 0) {
 				usage(stderr, program);
