@@ -25,4 +25,3 @@ examples: ./examples/fib.bm ./examples/123.bm
 	./basm $< $@
 
 -include $(DEPS)
-
