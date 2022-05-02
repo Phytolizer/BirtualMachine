@@ -134,7 +134,7 @@ StringView sv_chop_by_delim(StringView* sv, char delim);
 bool sv_eq(StringView a, StringView b);
 int sv_to_int(StringView sv);
 void bm_translate_source(StringView source, Bm* bm, LabelTable* lt);
-int label_table_find(const LabelTable* lt, StringView name);
+Word label_table_find(const LabelTable* lt, StringView name);
 void label_table_push(LabelTable* lt, StringView name, Word addr);
 void label_table_push_unresolved_jump(LabelTable* lt, StringView label, Word addr);
 StringView slurp_file(const char* file_path);
@@ -424,13 +424,14 @@ int sv_to_int(StringView sv) {
 	return result;
 }
 
-int label_table_find(const LabelTable* lt, StringView name) {
+Word label_table_find(const LabelTable* lt, StringView name) {
 	for (size_t i = 0; i < lt->labels_size; i++) {
 		if (sv_eq(lt->labels[i].name, name)) {
-			return (int)i;
+			return lt->labels[i].addr;
 		}
 	}
-	return -1;
+	fprintf(stderr, "ERROR: label `%.*s` does not exist\n", (int)name.count, name.data);
+	exit(1);
 }
 
 void label_table_push(LabelTable* lt, StringView name, Word addr) {
@@ -472,16 +473,9 @@ void bm_translate_source(StringView source, Bm* bm, LabelTable* lt) {
 	}
 	bm->program[bm->program_size++] = (Inst){.type = inst_type_halt};
 
-	printf("LABELS:\n");
-	for (size_t i = 0; i < lt->labels_size; i++) {
-		printf("%.*s -> %" PRI_WORD "\n", (int)lt->labels[i].name.count, lt->labels[i].name.data,
-				lt->labels[i].addr);
-	}
-
-	printf("UNRESOLVED JUMPS:\n");
 	for (size_t i = 0; i < lt->unresolved_jumps_size; i++) {
-		printf("%" PRI_WORD " -> %.*s\n", lt->unresolved_jumps[i].addr,
-				(int)lt->unresolved_jumps[i].label.count, lt->unresolved_jumps[i].label.data);
+		Word addr = label_table_find(lt, lt->unresolved_jumps[i].label);
+		bm->program[lt->unresolved_jumps[i].addr].operand = addr;
 	}
 }
 
