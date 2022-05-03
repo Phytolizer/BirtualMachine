@@ -133,10 +133,10 @@ StringView sv_trim(StringView sv);
 StringView sv_chop_by_delim(StringView* sv, char delim);
 bool sv_eq(StringView a, StringView b);
 int sv_to_int(StringView sv);
-void bm_translate_source(StringView source, Bm* bm, BasmContext* lt);
-Word basm_find_label_addr(const BasmContext* lt, StringView name);
-void basm_push_label(BasmContext* lt, StringView name, Word addr);
-void basm_push_deferred_operand(BasmContext* lt, StringView label, Word addr);
+void bm_translate_source(StringView source, Bm* bm, BasmContext* basm);
+Word basm_find_label_addr(const BasmContext* basm, StringView name);
+void basm_push_label(BasmContext* basm, StringView name, Word addr);
+void basm_push_deferred_operand(BasmContext* basm, StringView label, Word addr);
 StringView slurp_file(const char* file_path);
 
 #endif
@@ -424,22 +424,22 @@ int sv_to_int(StringView sv) {
 	return result;
 }
 
-Word basm_find_label_addr(const BasmContext* lt, StringView name) {
-	for (size_t i = 0; i < lt->labels_size; i++) {
-		if (sv_eq(lt->labels[i].name, name)) {
-			return lt->labels[i].addr;
+Word basm_find_label_addr(const BasmContext* basm, StringView name) {
+	for (size_t i = 0; i < basm->labels_size; i++) {
+		if (sv_eq(basm->labels[i].name, name)) {
+			return basm->labels[i].addr;
 		}
 	}
 	fprintf(stderr, "ERROR: label `%.*s` does not exist\n", (int)name.count, name.data);
 	exit(1);
 }
 
-void basm_push_label(BasmContext* lt, StringView name, Word addr) {
-	assert(lt->labels_size < LABEL_CAPACITY);
-	lt->labels[lt->labels_size++] = (Label){.name = name, .addr = addr};
+void basm_push_label(BasmContext* basm, StringView name, Word addr) {
+	assert(basm->labels_size < LABEL_CAPACITY);
+	basm->labels[basm->labels_size++] = (Label){.name = name, .addr = addr};
 }
 
-void bm_translate_source(StringView source, Bm* bm, BasmContext* lt) {
+void bm_translate_source(StringView source, Bm* bm, BasmContext* basm) {
 	while (source.count > 0) {
 		assert(bm->program_size < BM_PROGRAM_CAPACITY);
 		StringView line = sv_trim(sv_chop_by_delim(&source, '\n'));
@@ -451,7 +451,7 @@ void bm_translate_source(StringView source, Bm* bm, BasmContext* lt) {
 						.count = inst_name.count - 1,
 						.data = inst_name.data,
 				};
-				basm_push_label(lt, label, bm->program_size);
+				basm_push_label(basm, label, bm->program_size);
 				inst_name = sv_trim(sv_chop_by_delim(&line, ' '));
 			}
 
@@ -475,7 +475,7 @@ void bm_translate_source(StringView source, Bm* bm, BasmContext* lt) {
 								.operand = sv_to_int(operand),
 						};
 					} else {
-						basm_push_deferred_operand(lt, operand, bm->program_size);
+						basm_push_deferred_operand(basm, operand, bm->program_size);
 						bm->program[bm->program_size++] = (Inst){.type = inst_type_jump};
 					}
 				} else {
@@ -488,15 +488,15 @@ void bm_translate_source(StringView source, Bm* bm, BasmContext* lt) {
 	}
 	bm->program[bm->program_size++] = (Inst){.type = inst_type_halt};
 
-	for (size_t i = 0; i < lt->deferred_operands_size; i++) {
-		Word addr = basm_find_label_addr(lt, lt->deferred_operands[i].label);
-		bm->program[lt->deferred_operands[i].addr].operand = addr;
+	for (size_t i = 0; i < basm->deferred_operands_size; i++) {
+		Word addr = basm_find_label_addr(basm, basm->deferred_operands[i].label);
+		bm->program[basm->deferred_operands[i].addr].operand = addr;
 	}
 }
 
-void basm_push_deferred_operand(BasmContext* lt, StringView label, Word addr) {
-	assert(lt->deferred_operands_size < DEFERRED_OPERANDS_CAPACITY);
-	lt->deferred_operands[lt->deferred_operands_size++] =
+void basm_push_deferred_operand(BasmContext* basm, StringView label, Word addr) {
+	assert(basm->deferred_operands_size < DEFERRED_OPERANDS_CAPACITY);
+	basm->deferred_operands[basm->deferred_operands_size++] =
 			(DeferredOperand){.addr = addr, .label = label};
 }
 
