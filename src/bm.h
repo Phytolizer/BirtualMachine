@@ -16,7 +16,7 @@
 #define BM_PROGRAM_CAPACITY 1024
 #define BM_EXECUTION_LIMIT 69
 #define LABEL_CAPACITY 1024
-#define UNRESOLVED_JUMPS_CAPACITY 1024
+#define DEFERRED_OPERANDS_CAPACITY 1024
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 #define TRAPS_X \
@@ -109,14 +109,14 @@ typedef struct {
 typedef struct {
 	Word addr;
 	StringView label;
-} UnresolvedJump;
+} DeferredOperand;
 
 typedef struct {
 	Label labels[LABEL_CAPACITY];
 	size_t labels_size;
-	UnresolvedJump unresolved_jumps[UNRESOLVED_JUMPS_CAPACITY];
-	size_t unresolved_jumps_size;
-} LabelTable;
+	DeferredOperand deferred_operands[DEFERRED_OPERANDS_CAPACITY];
+	size_t deferred_operands_size;
+} BasmContext;
 
 const char* trap_as_cstr(Trap trap);
 const char* inst_type_as_cstr(InstType type);
@@ -133,10 +133,10 @@ StringView sv_trim(StringView sv);
 StringView sv_chop_by_delim(StringView* sv, char delim);
 bool sv_eq(StringView a, StringView b);
 int sv_to_int(StringView sv);
-void bm_translate_source(StringView source, Bm* bm, LabelTable* lt);
-Word label_table_find(const LabelTable* lt, StringView name);
-void label_table_push(LabelTable* lt, StringView name, Word addr);
-void label_table_push_unresolved_jump(LabelTable* lt, StringView label, Word addr);
+void bm_translate_source(StringView source, Bm* bm, BasmContext* lt);
+Word basm_find_label_addr(const BasmContext* lt, StringView name);
+void basm_push_label(BasmContext* lt, StringView name, Word addr);
+void basm_push_deferred_operand(BasmContext* lt, StringView label, Word addr);
 StringView slurp_file(const char* file_path);
 
 #endif
@@ -424,7 +424,7 @@ int sv_to_int(StringView sv) {
 	return result;
 }
 
-Word label_table_find(const LabelTable* lt, StringView name) {
+Word basm_find_label_addr(const BasmContext* lt, StringView name) {
 	for (size_t i = 0; i < lt->labels_size; i++) {
 		if (sv_eq(lt->labels[i].name, name)) {
 			return lt->labels[i].addr;
@@ -434,64 +434,70 @@ Word label_table_find(const LabelTable* lt, StringView name) {
 	exit(1);
 }
 
-void label_table_push(LabelTable* lt, StringView name, Word addr) {
+void basm_push_label(BasmContext* lt, StringView name, Word addr) {
 	assert(lt->labels_size < LABEL_CAPACITY);
 	lt->labels[lt->labels_size++] = (Label){.name = name, .addr = addr};
 }
 
-void bm_translate_source(StringView source, Bm* bm, LabelTable* lt) {
+void bm_translate_source(StringView source, Bm* bm, BasmContext* lt) {
 	while (source.count > 0) {
 		assert(bm->program_size < BM_PROGRAM_CAPACITY);
 		StringView line = sv_trim(sv_chop_by_delim(&source, '\n'));
 		if (line.count > 0 && line.data[0] != '#') {
 			StringView inst_name = sv_chop_by_delim(&line, ' ');
-			StringView operand = sv_trim(sv_chop_by_delim(&line, '#'));
 
 			if (inst_name.count > 0 && inst_name.data[inst_name.count - 1] == ':') {
 				StringView label = {
 						.count = inst_name.count - 1,
 						.data = inst_name.data,
 				};
-				label_table_push(lt, label, bm->program_size);
-			} else if (sv_eq(inst_name, cstr_as_sv("nop"))) {
-				bm->program[bm->program_size++] = (Inst){.type = inst_type_nop};
-			} else if (sv_eq(inst_name, cstr_as_sv("push"))) {
-				bm->program[bm->program_size++] =
-						(Inst){.type = inst_type_push, .operand = sv_to_int(operand)};
-			} else if (sv_eq(inst_name, cstr_as_sv("dup"))) {
-				bm->program[bm->program_size++] =
-						(Inst){.type = inst_type_dup, .operand = sv_to_int(operand)};
-			} else if (sv_eq(inst_name, cstr_as_sv("plus"))) {
-				bm->program[bm->program_size++] = (Inst){.type = inst_type_plus};
-			} else if (sv_eq(inst_name, cstr_as_sv("jmp"))) {
-				if (operand.count > 0 && isdigit(operand.data[0])) {
-					bm->program[bm->program_size++] = (Inst){
-							.type = inst_type_jump,
-							.operand = sv_to_int(operand),
-					};
+				basm_push_label(lt, label, bm->program_size);
+				inst_name = sv_trim(sv_chop_by_delim(&line, ' '));
+			}
+
+			if (inst_name.count > 0) {
+				StringView operand = sv_trim(sv_chop_by_delim(&line, '#'));
+
+				if (sv_eq(inst_name, cstr_as_sv("nop"))) {
+					bm->program[bm->program_size++] = (Inst){.type = inst_type_nop};
+				} else if (sv_eq(inst_name, cstr_as_sv("push"))) {
+					bm->program[bm->program_size++] =
+							(Inst){.type = inst_type_push, .operand = sv_to_int(operand)};
+				} else if (sv_eq(inst_name, cstr_as_sv("dup"))) {
+					bm->program[bm->program_size++] =
+							(Inst){.type = inst_type_dup, .operand = sv_to_int(operand)};
+				} else if (sv_eq(inst_name, cstr_as_sv("plus"))) {
+					bm->program[bm->program_size++] = (Inst){.type = inst_type_plus};
+				} else if (sv_eq(inst_name, cstr_as_sv("jmp"))) {
+					if (operand.count > 0 && isdigit(operand.data[0])) {
+						bm->program[bm->program_size++] = (Inst){
+								.type = inst_type_jump,
+								.operand = sv_to_int(operand),
+						};
+					} else {
+						basm_push_deferred_operand(lt, operand, bm->program_size);
+						bm->program[bm->program_size++] = (Inst){.type = inst_type_jump};
+					}
 				} else {
-					label_table_push_unresolved_jump(lt, operand, bm->program_size);
-					bm->program[bm->program_size++] = (Inst){.type = inst_type_jump};
+					fprintf(stderr, "ERROR: unknown instruction `%.*s`\n", (int)inst_name.count,
+							inst_name.data);
+					exit(1);
 				}
-			} else {
-				fprintf(stderr, "ERROR: unknown instruction `%.*s`\n", (int)inst_name.count,
-						inst_name.data);
-				exit(1);
 			}
 		}
 	}
 	bm->program[bm->program_size++] = (Inst){.type = inst_type_halt};
 
-	for (size_t i = 0; i < lt->unresolved_jumps_size; i++) {
-		Word addr = label_table_find(lt, lt->unresolved_jumps[i].label);
-		bm->program[lt->unresolved_jumps[i].addr].operand = addr;
+	for (size_t i = 0; i < lt->deferred_operands_size; i++) {
+		Word addr = basm_find_label_addr(lt, lt->deferred_operands[i].label);
+		bm->program[lt->deferred_operands[i].addr].operand = addr;
 	}
 }
 
-void label_table_push_unresolved_jump(LabelTable* lt, StringView label, Word addr) {
-	assert(lt->unresolved_jumps_size < UNRESOLVED_JUMPS_CAPACITY);
-	lt->unresolved_jumps[lt->unresolved_jumps_size++] =
-			(UnresolvedJump){.addr = addr, .label = label};
+void basm_push_deferred_operand(BasmContext* lt, StringView label, Word addr) {
+	assert(lt->deferred_operands_size < DEFERRED_OPERANDS_CAPACITY);
+	lt->deferred_operands[lt->deferred_operands_size++] =
+			(DeferredOperand){.addr = addr, .label = label};
 }
 
 StringView slurp_file(const char* file_path) {

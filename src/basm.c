@@ -2,7 +2,7 @@
 #include "bm.h"
 
 static Bm bm = {0};
-static LabelTable lt = {0};
+static BasmContext lt = {0};
 
 static char* shift(int* argc, char*** argv) {
 	if (*argc == 0) {
