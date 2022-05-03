@@ -453,6 +453,8 @@ void bm_translate_source(StringView source, Bm* bm, LabelTable* lt) {
 						.data = inst_name.data,
 				};
 				label_table_push(lt, label, bm->program_size);
+			} else if (sv_eq(inst_name, cstr_as_sv("nop"))) {
+				bm->program[bm->program_size++] = (Inst){.type = inst_type_nop};
 			} else if (sv_eq(inst_name, cstr_as_sv("push"))) {
 				bm->program[bm->program_size++] =
 						(Inst){.type = inst_type_push, .operand = sv_to_int(operand)};
@@ -462,8 +464,15 @@ void bm_translate_source(StringView source, Bm* bm, LabelTable* lt) {
 			} else if (sv_eq(inst_name, cstr_as_sv("plus"))) {
 				bm->program[bm->program_size++] = (Inst){.type = inst_type_plus};
 			} else if (sv_eq(inst_name, cstr_as_sv("jmp"))) {
-				label_table_push_unresolved_jump(lt, operand, bm->program_size);
-				bm->program[bm->program_size++] = (Inst){.type = inst_type_jump};
+				if (operand.count > 0 && isdigit(operand.data[0])) {
+					bm->program[bm->program_size++] = (Inst){
+							.type = inst_type_jump,
+							.operand = sv_to_int(operand),
+					};
+				} else {
+					label_table_push_unresolved_jump(lt, operand, bm->program_size);
+					bm->program[bm->program_size++] = (Inst){.type = inst_type_jump};
+				}
 			} else {
 				fprintf(stderr, "ERROR: unknown instruction `%.*s`\n", (int)inst_name.count,
 						inst_name.data);
