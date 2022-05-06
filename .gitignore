@@ -4,5 +4,6 @@
 basm
 bme
 debasm
+nan
 *.bm
 compile_commands.json

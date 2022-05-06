@@ -4,6 +4,7 @@ Checks: |
     clang-analyzer-*,
     bugprone-*,
     -bugprone-easily-swappable-parameters,
+    -bugprone-macro-parentheses,
     google-*,
 CheckOptions:
     - key: readability-identifier-naming.ClassCase

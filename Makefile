@@ -6,12 +6,14 @@ DEPS := $(OBJS:.o=.d)
 CPPFLAGS += --write-user-dependencies -MP
 
 .PHONY: all
-all: basm bme debasm
+all: basm bme debasm nan
 basm: src/basm.o
 	$(CC) $(CFLAGS) -o $@ $^
 bme: src/bme.o
 	$(CC) $(CFLAGS) -o $@ $^
 debasm: src/debasm.o
+	$(CC) $(CFLAGS) -o $@ $^
+nan: src/nan.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY: clean
