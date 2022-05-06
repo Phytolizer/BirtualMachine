@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -50,28 +51,59 @@ static uint64_t get_value(double x) {
 	return y & VALUE_MASK;
 }
 
-static bool is_nan(double x) {
-	uint64_t y = *(uint64_t*)&x;
-	return ((y & EXP_MASK) == EXP_MASK) && (y & FRACTION_MASK) != 0;
+#define DOUBLE_TYPE 0
+#define INTEGER_TYPE 1
+#define POINTER_TYPE 2
+
+static bool is_double(double x) {
+	return !isnan(x);
 }
 
-static bool is_inf(double x) {
-	uint64_t y = *(uint64_t*)&x;
-	return ((y & EXP_MASK) == EXP_MASK) && (y & FRACTION_MASK) != 0 && (y & SIGN_MASK) == 0;
+static bool is_integer(double x) {
+	return isnan(x) && get_type(x) == TYPE(INTEGER_TYPE);
 }
 
-#define INSPECT_VALUE(type, value, label) \
-	do { \
-		type name = (value); \
-		printf("%s = \n    ", label); \
-		print_bits((uint8_t*)&name, sizeof(name)); \
-		printf("    is_nan = %s\n", is_nan(name) ? "yes" : "no"); \
-		printf("    isnan = %s\n", isnan(name) ? "yes" : "no"); \
-	} while (false)
+static bool is_pointer(double x) {
+	return isnan(x) && get_type(x) == TYPE(POINTER_TYPE);
+}
+
+static double as_double(double x) {
+	return x;
+}
+
+static uint64_t as_integer(double x) {
+	return get_value(x);
+}
+
+static void* as_pointer(double x) {
+	return (void*)get_value(x);
+}
+
+static double box_double(double x) {
+	return x;
+}
+
+static double box_integer(uint64_t x) {
+	return set_value(set_type(mk_inf(), TYPE(INTEGER_TYPE)), x);
+}
+
+static double box_pointer(void* x) {
+	return set_value(set_type(mk_inf(), TYPE(POINTER_TYPE)), (uint64_t)x);
+}
+
+#define VALUES_CAPACITY 256
+double values[VALUES_CAPACITY];
+size_t values_size = 0;
 
 int main(void) {
-	for (uint64_t x = 0; x < UINT64_C(8); x++) {
-		INSPECT_VALUE(double, set_value(set_type(mk_inf(), TYPE(x)), UINT64_C(1234567)), "0");
-	}
-	return 0;
+	double x = 34832.549328;
+	values[values_size++] = box_double(3.14159265359);
+	values[values_size++] = box_integer(UINT64_C(12345678));
+	values[values_size++] = box_pointer(&x);
+
+	assert(values[0] == as_double(values[0]));
+	assert(UINT64_C(12345678) == as_integer(values[1]));
+	assert(&x == as_pointer(values[2]));
+
+	printf("OK\n");
 }
