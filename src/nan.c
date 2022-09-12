@@ -8,18 +8,20 @@
 // source: https://gist.github.com/m1lkweed/464a9271a37fc3ea5a6d8e346d826525
 #ifndef __cplusplus
 #if 0 // type-punning causes warnings
-#define __builtin_bit_cast(type, arg) ({ \
-	typeof(arg) a = arg;             \
-	*(type*)&a;                      \
-})
+#define __builtin_bit_cast(type, arg) \
+	({ \
+		typeof(arg) a = arg; \
+		*(type*)&a; \
+	})
 #else
-#define __builtin_bit_cast(type, arg) ({ \
-	union{                           \
-		__typeof(arg) in;        \
-		type out;                \
-	} a = {.in = arg};               \
-	a.out;                           \
-})
+#define __builtin_bit_cast(type, arg) \
+	({ \
+		union { \
+			__typeof(arg) in; \
+			type out; \
+		} a = {.in = arg}; \
+		a.out; \
+	})
 #endif
 #endif
 
