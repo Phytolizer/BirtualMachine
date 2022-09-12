@@ -1,4 +1,4 @@
-CFLAGS := -Wall -Wextra -Wpedantic -std=c11 -Werror=implicit-function-declaration -Werror=missing-prototypes -Wswitch-enum
+CFLAGS := -Wall -Wextra -std=gnu11 -Werror=implicit-function-declaration -Werror=missing-prototypes -Wswitch-enum
 LIBS :=
 OBJS := src/basm.o src/bme.o src/debasm.o
 DEPS := $(OBJS:.o=.d)

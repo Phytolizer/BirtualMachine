@@ -5,6 +5,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// source: https://gist.github.com/m1lkweed/464a9271a37fc3ea5a6d8e346d826525
+#ifndef __cplusplus
+#if 0 // type-punning causes warnings
+#define __builtin_bit_cast(type, arg) ({ \
+	typeof(arg) a = arg;             \
+	*(type*)&a;                      \
+})
+#else
+#define __builtin_bit_cast(type, arg) ({ \
+	union{                           \
+		__typeof(arg) in;        \
+		type out;                \
+	} a = {.in = arg};               \
+	a.out;                           \
+})
+#endif
+#endif
+
 static void print_bits(uint8_t* bytes, size_t bytesSize) {
 	for (int i = (int)bytesSize - 1; i >= 0; i--) {
 		uint8_t byte = bytes[i];
@@ -26,28 +44,28 @@ static void print_bits(uint8_t* bytes, size_t bytesSize) {
 
 static double mk_inf(void) {
 	uint64_t y = EXP_MASK;
-	return *(double*)&y;
+	return __builtin_bit_cast(double, y);
 }
 
 static double set_type(double x, uint64_t type) {
-	uint64_t y = *(uint64_t*)&x;
+	uint64_t y = __builtin_bit_cast(uint64_t, x);
 	y = (y & (~TYPE_MASK)) | ((TYPE_MASK >> UINT64_C(48)) & type) << UINT64_C(48);
-	return *(double*)&y;
+	return __builtin_bit_cast(double, y);
 }
 
 static uint64_t get_type(double x) {
-	uint64_t y = *(uint64_t*)&x;
+	uint64_t y = __builtin_bit_cast(uint64_t, x);
 	return (y & TYPE_MASK) >> UINT64_C(48);
 }
 
 static double set_value(double x, uint64_t value) {
-	uint64_t y = *(uint64_t*)&x;
+	uint64_t y = __builtin_bit_cast(uint64_t, x);
 	y = (y & ~VALUE_MASK) | (VALUE_MASK & value);
-	return *(double*)&y;
+	return __builtin_bit_cast(double, y);
 }
 
 static uint64_t get_value(double x) {
-	uint64_t y = *(uint64_t*)&x;
+	uint64_t y = __builtin_bit_cast(uint64_t, x);
 	return y & VALUE_MASK;
 }
 
